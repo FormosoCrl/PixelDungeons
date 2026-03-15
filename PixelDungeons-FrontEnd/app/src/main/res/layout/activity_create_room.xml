@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.LoginActivity">
+    tools:context=".ui.CreateRoomActivity">
 
     <!-- Título -->
     <TextView
@@ -21,57 +21,42 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintVertical_bias="0.15"
-    />
-    <!-- introducir email -->
+        />
+    <!-- introducir nombre de sala -->
     <EditText
-        android:id="@+id/email_input"
-        android:layout_width="300dp"
+        android:id="@+id/name_input"
+        android:layout_width="380dp"
         android:layout_height="wrap_content"
-        android:hint="Introduce tu email"
+        android:hint="Introduce el nombre de la sala"
         android:textSize="20sp"
-        android:inputType="textEmailAddress"
         app:layout_constraintTop_toBottomOf="@id/titulo_portada"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintVertical_bias="0.15"
-    />
+        />
     <!-- introducir contraseña -->
     <EditText
         android:id="@+id/password_input"
-        android:layout_width="300dp"
+        android:layout_width="380dp"
         android:layout_height="wrap_content"
-        android:hint="Introduce tu contraseña"
+        android:hint="Introduce contraseña de la sala (si tiene)"
         android:textSize="20sp"
         android:inputType="textPassword"
-        app:layout_constraintTop_toBottomOf="@id/email_input"
+        app:layout_constraintTop_toBottomOf="@id/name_input"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintVertical_bias="0.1"
         />
-    <!-- boton de login -->
+    <!-- boton de creación -->
     <Button
-        android:id="@+id/login_button"
+        android:id="@+id/create_button"
         android:layout_width="200dp"
         android:layout_height="50dp"
-        android:text="Iniciar Sesión"
+        android:text="Crear partida"
         android:textSize="18sp"
         app:layout_constraintTop_toBottomOf="@id/password_input"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.1"
-    />
-    <!-- boton de registro -->
-    <Button
-        android:id="@+id/register_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="¿No tienes cuenta? Regístrate"
-        android:textSize="18sp"
-        app:layout_constraintTop_toBottomOf="@id/login_button"
-        style="?attr/borderlessButtonStyle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

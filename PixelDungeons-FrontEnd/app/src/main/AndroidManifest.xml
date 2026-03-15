@@ -10,6 +10,25 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PixelDungeons" />
+        android:theme="@style/Theme.PixelDungeons">
+        <activity
+            android:name=".ui.MapActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CharacterDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.MasterDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.CharacterListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.LobbyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="false" />
+    </application>
 
 </manifest>

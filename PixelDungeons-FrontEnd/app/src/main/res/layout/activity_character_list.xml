@@ -7,4 +7,59 @@
     android:layout_height="match_parent"
     tools:context=".ui.CharacterListActivity">
 
+    <!-- Título -->
+    <TextView
+        android:id="@+id/character_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mis Personajes"
+        android:textSize="38sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.15"
+        />
+    <!--Texto explicativo en caso de que no haya personajes -->
+    <TextView
+        android:id="@+id/emptycharacter_title"
+        android:layout_width="380dp"
+        android:layout_height="wrap_content"
+        android:text="Aún no tienes personajes, crea uno nuevo para empezar a jugar"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toBottomOf="@id/character_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.1"
+        />
+    <!-- recicler view de selección de personajes -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/character_selection"
+        android:layout_width="350dp"
+        android:layout_height="450dp"
+        app:layout_constraintTop_toBottomOf="@id/character_title"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.15"
+        />
+    <!-- botón de creación de personaje -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/create_character_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@android:drawable/ic_input_add"
+        app:layout_constraintTop_toBottomOf="@id/character_selection"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0"
+        app:layout_constraintHorizontal_bias="0.9"
+        />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

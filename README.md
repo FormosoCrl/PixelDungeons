@@ -1,39 +1,50 @@
-# 🐉 PixelDungeons - Companion App para Rol de Mesa
+🐉 PixelDungeons - Companion App para Rol de Mesa
+PixelDungeons es una aplicación móvil desarrollada como Proyecto Intermodular para el ciclo de Desarrollo de Aplicaciones Multiplataforma (DAM). Funciona como un asistente virtual (companion) para partidas de rol de mesa, digitalizando y automatizando la gestión de personajes, inventarios y mapas para agilizar el ritmo de juego.
 
-**PixelDungeons** es una aplicación móvil desarrollada como Proyecto Intermodular para el ciclo de Desarrollo de Aplicaciones Multiplataforma (DAM). Funciona como un asistente virtual (*companion*) para partidas de rol de mesa, digitalizando y automatizando la gestión de personajes, inventarios y mapas para agilizar el ritmo de juego.
+📱 Estructura del Cliente (Android Nativo)
+La aplicación sigue el patrón de arquitectura MVVM (Model-View-ViewModel) y está compuesta por las siguientes pantallas principales (Activities):
 
-## 📱 Estructura del Cliente (Android Nativo)
+LoginActivity: Gestión de inicio de sesión de usuarios.
 
-La aplicación sigue el patrón de arquitectura **MVVM (Model-View-ViewModel)** y está compuesta por las siguientes pantallas principales (Activities):
+RegisterActivity: Registro de nuevos aventureros en el sistema.
 
-* **`LoginActivity`**: Pantalla de entrada a la aplicación. Gestiona el inicio de sesión.
-* **`RegisterActivity`**: Pantalla para el registro de nuevos usuarios en el sistema.
-* **`LobbyActivity`**: Menú principal donde el usuario elige su rol (Dungeon Master o Jugador).
-* **`SearchActivity`**: Buscador de salas existentes para Jugadores.
-* **`CreateRoomActivity`**: Configuración de nueva sala para el Dungeon Master.
-* **`CharacterListActivity`**: Listado de personajes del jugador en una sala. Incluye estado vacío y acceso a creación.
-* **`CharacterCreateActivity`**: Formulario de creación de personaje (Nombre, Raza y Clase).
-* **`MasterDashboardActivity`**: Panel de control del DM para gestionar jugadores y sala.
-* **`CharacterDetailActivity`**: Hoja de personaje interactiva con estadísticas e inventario.
-* **`MapActivity`**: Visualizador de mapas interactivo para la partida.
+LobbyActivity: Nodo central para elegir rol (Dungeon Master o Jugador).
 
-## 🗺️ Flujo de Navegación Principal
+SearchRoomActivity: Buscador de salas activas mediante código o nombre.
 
-El flujo que sigue la aplicación desde que el usuario la abre es el siguiente:
+CreateRoomActivity: Creación y configuración de nuevas salas de juego.
 
-1. **Autenticación:** El usuario inicia en `LoginActivity` -> Opcional `RegisterActivity`.
-2. **Selección de Camino (`LobbyActivity`):**
-   * **Ruta Jugador:** `SearchActivity` -> `CharacterListActivity`.
-     * Si no tiene personajes: `CharacterCreateActivity`.
-     * Si tiene: Selecciona uno y va a `CharacterDetailActivity`.
-   * **Ruta Dungeon Master:** `CreateRoomActivity` -> `MasterDashboardActivity`.
-3. **En Partida:** Acceso común a `MapActivity` para visualización del entorno.
+CharacterListActivity: Gestión de los personajes del usuario en una sala específica.
 
-## ⚙️ Tecnologías Utilizadas
+CharacterCreateActivity: Formulario detallado para la creación de nuevos héroes.
 
-* **Frontend:** Android Nativo (Java) con vistas clásicas en XML (`ConstraintLayout`, `RecyclerView`, `Spinners`).
-* **Backend:** Django (API REST propia).
-* **Formatos de datos:** JSON para la comunicación HTTP.
+CharacterDetailActivity: Hoja de personaje interactiva con visualización de estadísticas base (STR, DEX, DEF, MANA) y salud.
 
-## 🚀 Estado del Proyecto
-*En desarrollo - Fase inicial (Diseño de interfaces de usuario y flujo de navegación completo).*
+InventoryActivity: Mochila del jugador que lista objetos y equipo mediante un RecyclerView.
+
+MapActivity: Centro neurálgico de la partida con visualización del mapa y accesos rápidos.
+
+MasterDashboardActivity: Panel de control exclusivo para el DM para la gestión de la sala y jugadores.
+
+🗺️ Flujo de Navegación Principal
+El flujo lógico diseñado para la aplicación es el siguiente:
+
+Autenticación: El usuario accede vía LoginActivity o se registra en RegisterActivity.
+
+Selección de Rol (LobbyActivity):
+
+   Ruta Jugador: SearchRoomActivity → CharacterListActivity. Si no existen personajes previos, se redirige a CharacterCreateActivity. Una vez seleccionado el héroe, se accede a CharacterDetailActivity.
+
+   Ruta Dungeon Master: CreateRoomActivity → MasterDashboardActivity.
+
+Modo Partida: Interconexión entre CharacterDetailActivity, InventoryActivity y MapActivity para el desarrollo del juego.
+
+⚙️ Tecnologías Utilizadas
+Frontend: Android Nativo (Java) con vistas en XML (ConstraintLayout, RecyclerView).
+
+Backend: Django (API REST propia).
+
+Formatos de datos: JSON para la comunicación HTTP (GET, POST, PUT, DELETE).
+
+🚀 Estado del Proyecto
+En desarrollo - Fase de diseño de interfaces (UI) y flujo de navegación completados.

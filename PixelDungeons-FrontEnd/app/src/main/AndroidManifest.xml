@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PixelDungeons">
         <activity
+            android:name=".ui.InventoryActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.CharacterCreateActivity"
             android:exported="false" />
         <activity

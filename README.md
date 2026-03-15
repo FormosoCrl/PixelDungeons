@@ -8,28 +8,32 @@ La aplicación sigue el patrón de arquitectura **MVVM (Model-View-ViewModel)** 
 
 * **`LoginActivity`**: Pantalla de entrada a la aplicación. Gestiona el inicio de sesión.
 * **`RegisterActivity`**: Pantalla para el registro de nuevos usuarios en el sistema.
-* **`LobbyActivity`**: El cruce de caminos inicial. Permite al usuario elegir entre crear una nueva sala (Dungeon Master) o unirse a una sala existente (Jugador).
-* **`SearchActivity`**: Pantalla para que los Jugadores introduzcan el nombre/código de una sala y se unan a ella.
-* **`CreateRoomActivity`**: Pantalla para que el Dungeon Master configure (nombre y contraseña) y funde una nueva sala.
-* **`CharacterListActivity`**: Pantalla exclusiva para Jugadores. Muestra una lista de los personajes creados en esa sala y ofrece la opción de crear uno nuevo.
-* **`MasterDashboardActivity`**: Panel de control exclusivo para el DM. Muestra la lista de todos los jugadores conectados a la sala para poder gestionar la partida.
-* **`CharacterDetailActivity`**: La hoja de personaje interactiva. Muestra estadísticas y el inventario. El jugador gestiona sus propios ítems; el DM puede alterar estadísticas o repartir botín en tiempo real.
-* **`MapActivity`**: El tablero visual de la partida. Los jugadores ven el mapa actual (con zoom y scroll). El DM tiene controles adicionales para importar e imponer nuevos mapas.
+* **`LobbyActivity`**: Menú principal donde el usuario elige su rol (Dungeon Master o Jugador).
+* **`SearchActivity`**: Buscador de salas existentes para Jugadores.
+* **`CreateRoomActivity`**: Configuración de nueva sala para el Dungeon Master.
+* **`CharacterListActivity`**: Listado de personajes del jugador en una sala. Incluye estado vacío y acceso a creación.
+* **`CharacterCreateActivity`**: Formulario de creación de personaje (Nombre, Raza y Clase).
+* **`MasterDashboardActivity`**: Panel de control del DM para gestionar jugadores y sala.
+* **`CharacterDetailActivity`**: Hoja de personaje interactiva con estadísticas e inventario.
+* **`MapActivity`**: Visualizador de mapas interactivo para la partida.
 
 ## 🗺️ Flujo de Navegación Principal
 
 El flujo que sigue la aplicación desde que el usuario la abre es el siguiente:
 
-1. **Autenticación:** El usuario inicia en `LoginActivity`. Si no tiene cuenta, navega a `RegisterActivity`. Una vez autenticado con éxito, avanza al menú principal.
-2. **Selección de Camino:** El usuario llega a `LobbyActivity`, donde decide su rol para la sesión:
-   * **Camino del Jugador:** Pulsa "Buscar Partida" -> Navega a `SearchActivity`. Al conectar con éxito, accederá a la gestión de su personaje (`CharacterListActivity`).
-   * **Camino del Dungeon Master:** Pulsa "Crear Partida" -> Navega a `CreateRoomActivity`. Al crear la sala, accederá directamente a su panel de control (`MasterDashboardActivity`).
+1. **Autenticación:** El usuario inicia en `LoginActivity` -> Opcional `RegisterActivity`.
+2. **Selección de Camino (`LobbyActivity`):**
+   * **Ruta Jugador:** `SearchActivity` -> `CharacterListActivity`.
+     * Si no tiene personajes: `CharacterCreateActivity`.
+     * Si tiene: Selecciona uno y va a `CharacterDetailActivity`.
+   * **Ruta Dungeon Master:** `CreateRoomActivity` -> `MasterDashboardActivity`.
+3. **En Partida:** Acceso común a `MapActivity` para visualización del entorno.
 
 ## ⚙️ Tecnologías Utilizadas
 
-* **Frontend:** Android Nativo (Java) con vistas clásicas en XML (ConstraintLayout).
+* **Frontend:** Android Nativo (Java) con vistas clásicas en XML (`ConstraintLayout`, `RecyclerView`, `Spinners`).
 * **Backend:** Django (API REST propia).
-* **Formatos de datos:** JSON para la comunicación HTTP (GET, POST, PUT, DELETE).
+* **Formatos de datos:** JSON para la comunicación HTTP.
 
 ## 🚀 Estado del Proyecto
-*En desarrollo - Fase inicial (Diseño de interfaz de autenticación y navegación base estructurado).*
+*En desarrollo - Fase inicial (Diseño de interfaces de usuario y flujo de navegación completo).*

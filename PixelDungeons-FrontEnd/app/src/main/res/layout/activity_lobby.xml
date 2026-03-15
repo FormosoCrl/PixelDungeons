@@ -7,4 +7,47 @@
     android:layout_height="match_parent"
     tools:context=".ui.LobbyActivity">
 
+    <!-- Título -->
+    <TextView
+        android:id="@+id/titulo_portada"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PixelDungeons"
+        android:textSize="38sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.15"
+        />
+
+    <!-- boton de busqueda de partida -->
+    <Button
+        android:id="@+id/search_button"
+        android:layout_width="250dp"
+        android:layout_height="100dp"
+        android:text="Buscar partida"
+        android:textSize="18sp"
+        app:layout_constraintTop_toBottomOf="@id/titulo_portada"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.2"
+        />
+    <!-- boton de creado de partida -->
+    <Button
+        android:id="@+id/create_button"
+        android:layout_width="250dp"
+        android:layout_height="100dp"
+        android:text="Crear partida"
+        android:textSize="18sp"
+        app:layout_constraintTop_toBottomOf="@id/search_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.15"
+        />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

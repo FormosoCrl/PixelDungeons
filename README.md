@@ -24,7 +24,9 @@ InventoryActivity: Mochila del jugador que lista objetos y equipo mediante un Re
 
 MapActivity: Centro neurálgico de la partida con visualización del mapa y accesos rápidos.
 
-MasterDashboardActivity: Panel de control exclusivo para el DM para la gestión de la sala y jugadores.
+MasterDashboardActivity: Panel de control exclusivo para el DM para la gestión de la sala, jugadores y mapas.
+
+MapManagerActivity: Gestor donde el DM sube y elige qué mapa es visible para los jugadores.
 
 🗺️ Flujo de Navegación Principal
 El flujo lógico diseñado para la aplicación es el siguiente:
@@ -35,7 +37,7 @@ Selección de Rol (LobbyActivity):
 
    Ruta Jugador: SearchRoomActivity → CharacterListActivity. Si no existen personajes previos, se redirige a CharacterCreateActivity. Una vez seleccionado el héroe, se accede a CharacterDetailActivity.
 
-   Ruta Dungeon Master: CreateRoomActivity → MasterDashboardActivity.
+   Ruta Dungeon Master: CreateRoomActivity → MasterDashboardActivity, con acceso a MapManagerActivity para subir y elegir el mapa visible.
 
 Modo Partida: Interconexión entre CharacterDetailActivity, InventoryActivity y MapActivity para el desarrollo del juego.
 

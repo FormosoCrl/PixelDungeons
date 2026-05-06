@@ -1,6 +1,7 @@
 package com.example.pixeldungeons.ui;
 
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,5 +23,9 @@ public class CharacterCreateActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        Button createButton = findViewById(R.id.create_character_button);
+
+        createButton.setOnClickListener(v -> finish());
     }
 }

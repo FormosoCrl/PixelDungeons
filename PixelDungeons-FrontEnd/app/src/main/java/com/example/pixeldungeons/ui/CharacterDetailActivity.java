@@ -36,6 +36,7 @@ public class CharacterDetailActivity extends AppCompatActivity {
         Button inventoryButton = findViewById(R.id.inventory_button);
 
         Intent received = getIntent();
+        boolean isMaster = received.getBooleanExtra("is_master", false);
         String name = received.getStringExtra("name");
         if (name != null) {
             nameText.setText(name);
@@ -50,11 +51,13 @@ public class CharacterDetailActivity extends AppCompatActivity {
 
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(CharacterDetailActivity.this, MapActivity.class);
+            intent.putExtra("is_master", isMaster);
             startActivity(intent);
         });
 
         inventoryButton.setOnClickListener(v -> {
             Intent intent = new Intent(CharacterDetailActivity.this, InventoryActivity.class);
+            intent.putExtra("is_master", isMaster);
             startActivity(intent);
         });
     }

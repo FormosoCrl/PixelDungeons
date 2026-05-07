@@ -1,6 +1,8 @@
 package com.example.pixeldungeons.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +23,13 @@ public class CreateRoomActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+        Button createButton = findViewById(R.id.create_button);
+
+        createButton.setOnClickListener(v -> {
+            Intent intent = new Intent(CreateRoomActivity.this, MasterDashboardActivity.class);
+            startActivity(intent);
         });
     }
 }

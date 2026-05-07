@@ -1,6 +1,8 @@
 package com.example.pixeldungeons.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +23,20 @@ public class MasterDashboardActivity extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+        Button manageMapsButton = findViewById(R.id.manage_maps_button);
+        Button closeRoomButton = findViewById(R.id.close_room_button);
+
+        manageMapsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MasterDashboardActivity.this, MapManagerActivity.class);
+            startActivity(intent);
+        });
+
+        closeRoomButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MasterDashboardActivity.this, LobbyActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
         });
     }
 }

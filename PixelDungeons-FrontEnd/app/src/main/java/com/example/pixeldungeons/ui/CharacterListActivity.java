@@ -56,6 +56,7 @@ public class CharacterListActivity extends AppCompatActivity {
             intent.putExtra("dex", hero.getDex());
             intent.putExtra("defence", hero.getDefence());
             intent.putExtra("mana", hero.getMana());
+            intent.putExtra("is_master", false);
             startActivity(intent);
         });
 

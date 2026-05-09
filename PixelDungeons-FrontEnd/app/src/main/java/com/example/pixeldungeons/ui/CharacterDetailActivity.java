@@ -2,11 +2,16 @@ package com.example.pixeldungeons.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
+import android.util.TypedValue;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -49,6 +54,15 @@ public class CharacterDetailActivity extends AppCompatActivity {
             manaText.setText(String.valueOf(received.getIntExtra("mana", 0)));
         }
 
+        if (isMaster) {
+            ConstraintLayout root = findViewById(R.id.main);
+            replaceWithEditText(hpText, root, InputType.TYPE_CLASS_TEXT);
+            replaceWithEditText(strText, root, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(dexText, root, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(defText, root, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(manaText, root, InputType.TYPE_CLASS_NUMBER);
+        }
+
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(CharacterDetailActivity.this, MapActivity.class);
             intent.putExtra("is_master", isMaster);
@@ -60,5 +74,22 @@ public class CharacterDetailActivity extends AppCompatActivity {
             intent.putExtra("is_master", isMaster);
             startActivity(intent);
         });
+    }
+
+    private void replaceWithEditText(TextView source, ConstraintLayout parent, int inputType) {
+        int index = parent.indexOfChild(source);
+        ViewGroup.LayoutParams params = source.getLayoutParams();
+
+        EditText edit = new EditText(this);
+        edit.setId(source.getId());
+        edit.setText(source.getText());
+        edit.setTextColor(source.getCurrentTextColor());
+        edit.setTypeface(source.getTypeface(), source.getTypeface() != null ? source.getTypeface().getStyle() : 0);
+        edit.setTextSize(TypedValue.COMPLEX_UNIT_PX, source.getTextSize());
+        edit.setInputType(inputType);
+        edit.setLayoutParams(params);
+
+        parent.removeView(source);
+        parent.addView(edit, index);
     }
 }

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,8 +31,15 @@ public class SearchRoomActivity extends AppCompatActivity {
         Button searchButton = findViewById(R.id.search_button);
 
         searchButton.setOnClickListener(v -> {
+            String roomName = nameInput.getText().toString().trim();
+
+            if (roomName.isEmpty()) {
+                Toast.makeText(this, "Introduce el nombre de la sala", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Intent intent = new Intent(SearchRoomActivity.this, CharacterListActivity.class);
-            intent.putExtra("room_name", nameInput.getText().toString());
+            intent.putExtra("room_name", roomName);
             startActivity(intent);
         });
     }

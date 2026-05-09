@@ -1,10 +1,13 @@
 package com.example.pixeldungeons.ui;
 
 import android.os.Bundle;
+import android.view.Gravity;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -32,6 +35,8 @@ public class InventoryActivity extends AppCompatActivity {
             return insets;
         });
 
+        boolean isMaster = getIntent().getBooleanExtra("is_master", false);
+
         RecyclerView inventoryRecycler = findViewById(R.id.inventory_recycler);
         Button backButton = findViewById(R.id.btn_back_to_map);
 
@@ -48,5 +53,32 @@ public class InventoryActivity extends AppCompatActivity {
         inventoryRecycler.setAdapter(itemAdapter);
 
         backButton.setOnClickListener(v -> finish());
+
+        if (isMaster) {
+            addMasterAddItemButton();
+        }
+    }
+
+    private void addMasterAddItemButton() {
+        ConstraintLayout root = findViewById(R.id.main);
+        Button addButton = new Button(this);
+        addButton.setText("Añadir objeto");
+
+        ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                ConstraintLayout.LayoutParams.WRAP_CONTENT,
+                ConstraintLayout.LayoutParams.WRAP_CONTENT
+        );
+        params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.topMargin = (int) (16 * getResources().getDisplayMetrics().density);
+        params.rightMargin = (int) (16 * getResources().getDisplayMetrics().density);
+        addButton.setLayoutParams(params);
+        addButton.setGravity(Gravity.CENTER);
+
+        addButton.setOnClickListener(v ->
+                Toast.makeText(this, "Próximamente", Toast.LENGTH_SHORT).show()
+        );
+
+        root.addView(addButton);
     }
 }

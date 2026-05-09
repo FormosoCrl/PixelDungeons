@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,12 +28,21 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         EditText emailInput = findViewById(R.id.email_input);
+        EditText passwordInput = findViewById(R.id.password_input);
         Button registerButton = findViewById(R.id.register_button);
         Button loginButton = findViewById(R.id.login_button);
 
         registerButton.setOnClickListener(v -> {
+            String email = emailInput.getText().toString().trim();
+            String password = passwordInput.getText().toString().trim();
+
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Rellena todos los campos", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Intent intent = new Intent(RegisterActivity.this, LobbyActivity.class);
-            intent.putExtra("email", emailInput.getText().toString());
+            intent.putExtra("email", email);
             startActivity(intent);
             finish();
         });

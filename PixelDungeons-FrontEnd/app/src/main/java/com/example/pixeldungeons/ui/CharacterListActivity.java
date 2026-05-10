@@ -14,15 +14,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pixeldungeons.R;
-import com.example.pixeldungeons.model.Hero;
+import com.example.pixeldungeons.data.HeroRepository;
 import com.example.pixeldungeons.ui.adapter.HeroAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class CharacterListActivity extends AppCompatActivity {
+
+    private HeroAdapter adapter;
+    private TextView emptyText;
+    private RecyclerView recycler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,17 +35,11 @@ public class CharacterListActivity extends AppCompatActivity {
             return insets;
         });
 
-        TextView emptyText = findViewById(R.id.emptycharacter_title);
-        RecyclerView recycler = findViewById(R.id.character_selection);
+        emptyText = findViewById(R.id.emptycharacter_title);
+        recycler = findViewById(R.id.character_selection);
         FloatingActionButton createButton = findViewById(R.id.create_character_button);
 
-        List<Hero> heroes = new ArrayList<>(Arrays.asList(
-                new Hero("Aragorn", "Humano", "Guerrero", 30, 30, 30, 15, 18, 5),
-                new Hero("Legolas", "Elfo", "Arquero", 22, 22, 18, 28, 12, 10),
-                new Hero("Gimli", "Enano", "Berserker", 35, 35, 26, 8, 22, 2)
-        ));
-
-        HeroAdapter adapter = new HeroAdapter(heroes, hero -> {
+        adapter = new HeroAdapter(HeroRepository.getHeroes(), hero -> {
             Intent intent = new Intent(CharacterListActivity.this, CharacterDetailActivity.class);
             intent.putExtra("name", hero.getName());
             intent.putExtra("race", hero.getRace());
@@ -63,17 +57,26 @@ public class CharacterListActivity extends AppCompatActivity {
         recycler.setLayoutManager(new LinearLayoutManager(this));
         recycler.setAdapter(adapter);
 
-        if (heroes.isEmpty()) {
+        createButton.setOnClickListener(v -> {
+            Intent intent = new Intent(CharacterListActivity.this, CharacterCreateActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        adapter.notifyDataSetChanged();
+        refreshEmptyState();
+    }
+
+    private void refreshEmptyState() {
+        if (HeroRepository.getHeroes().isEmpty()) {
             emptyText.setVisibility(View.VISIBLE);
             recycler.setVisibility(View.GONE);
         } else {
             emptyText.setVisibility(View.GONE);
             recycler.setVisibility(View.VISIBLE);
         }
-
-        createButton.setOnClickListener(v -> {
-            Intent intent = new Intent(CharacterListActivity.this, CharacterCreateActivity.class);
-            startActivity(intent);
-        });
     }
 }

@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.pixeldungeons.R;
+import com.example.pixeldungeons.data.PlayerInventoryRepository;
 
 public class CharacterDetailActivity extends AppCompatActivity {
 
@@ -47,32 +48,41 @@ public class CharacterDetailActivity extends AppCompatActivity {
             nameText.setText(name);
             int hp = received.getIntExtra("hp", 20);
             int maxHp = received.getIntExtra("maxHp", 20);
-            hpText.setText(hp + " / " + maxHp);
-            strText.setText(String.valueOf(received.getIntExtra("str", 0)));
-            dexText.setText(String.valueOf(received.getIntExtra("dex", 0)));
-            defText.setText(String.valueOf(received.getIntExtra("defence", 0)));
-            manaText.setText(String.valueOf(received.getIntExtra("mana", 0)));
+
+            int strBonus  = isMaster ? 0 : PlayerInventoryRepository.getEquippedBonus("str");
+            int dexBonus  = isMaster ? 0 : PlayerInventoryRepository.getEquippedBonus("dex");
+            int defBonus  = isMaster ? 0 : PlayerInventoryRepository.getEquippedBonus("def");
+            int manaBonus = isMaster ? 0 : PlayerInventoryRepository.getEquippedBonus("mana");
+            int hpBonus   = isMaster ? 0 : PlayerInventoryRepository.getEquippedBonus("hp");
+
+            hpText.setText((hp + hpBonus) + " / " + (maxHp + hpBonus));
+            strText.setText(String.valueOf(received.getIntExtra("str", 0) + strBonus));
+            dexText.setText(String.valueOf(received.getIntExtra("dex", 0) + dexBonus));
+            defText.setText(String.valueOf(received.getIntExtra("defence", 0) + defBonus));
+            manaText.setText(String.valueOf(received.getIntExtra("mana", 0) + manaBonus));
         }
 
         if (isMaster) {
-            ConstraintLayout root = findViewById(R.id.main);
-            replaceWithEditText(hpText, root, InputType.TYPE_CLASS_TEXT);
-            replaceWithEditText(strText, root, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(dexText, root, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(defText, root, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(manaText, root, InputType.TYPE_CLASS_NUMBER);
+            ConstraintLayout content = findViewById(R.id.detail_content);
+            replaceWithEditText(hpText, content, InputType.TYPE_CLASS_TEXT);
+            replaceWithEditText(strText, content, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(dexText, content, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(defText, content, InputType.TYPE_CLASS_NUMBER);
+            replaceWithEditText(manaText, content, InputType.TYPE_CLASS_NUMBER);
         }
 
         mapButton.setOnClickListener(v -> {
             Intent intent = new Intent(CharacterDetailActivity.this, MapActivity.class);
-            intent.putExtra("is_master", isMaster);
+            intent.putExtras(received);
             startActivity(intent);
+            finish();
         });
 
         inventoryButton.setOnClickListener(v -> {
             Intent intent = new Intent(CharacterDetailActivity.this, InventoryActivity.class);
-            intent.putExtra("is_master", isMaster);
+            intent.putExtras(received);
             startActivity(intent);
+            finish();
         });
     }
 

@@ -1,6 +1,9 @@
 package com.example.pixeldungeons.ui;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -12,15 +15,14 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pixeldungeons.R;
+import com.example.pixeldungeons.data.GameMapRepository;
 import com.example.pixeldungeons.model.GameMap;
 import com.example.pixeldungeons.ui.adapter.MapAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class MapManagerActivity extends AppCompatActivity {
+
+    private MapAdapter mapAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,25 +38,47 @@ public class MapManagerActivity extends AppCompatActivity {
         RecyclerView mapsRecycler = findViewById(R.id.maps_recycler);
         FloatingActionButton uploadButton = findViewById(R.id.upload_map_button);
 
-        List<GameMap> maps = new ArrayList<>(Arrays.asList(
-                new GameMap("Cripta nivel 1", true),
-                new GameMap("Bosque Oscuro", false),
-                new GameMap("Torre del Mago", false),
-                new GameMap("Caverna del Dragón", false)
-        ));
-
-        MapAdapter mapAdapter = new MapAdapter(maps, position -> {
-            for (int i = 0; i < maps.size(); i++) {
-                maps.get(i).setVisible(i == position);
-            }
-            mapsRecycler.getAdapter().notifyDataSetChanged();
+        mapAdapter = new MapAdapter(GameMapRepository.getMaps(), position -> {
+            GameMapRepository.setVisible(position);
+            mapAdapter.notifyDataSetChanged();
         });
 
         mapsRecycler.setLayoutManager(new GridLayoutManager(this, 2));
         mapsRecycler.setAdapter(mapAdapter);
 
-        uploadButton.setOnClickListener(v ->
-                Toast.makeText(this, "Próximamente", Toast.LENGTH_SHORT).show()
-        );
+        uploadButton.setOnClickListener(v -> showAddMapDialog());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mapAdapter != null) mapAdapter.notifyDataSetChanged();
+    }
+
+    private void showAddMapDialog() {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
+        container.setPadding(padding, padding, padding, 0);
+
+        EditText nameInput = new EditText(this);
+        nameInput.setHint("Nombre del mapa");
+        container.addView(nameInput);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Añadir mapa")
+                .setView(container)
+                .setPositiveButton("Crear", (dialog, which) -> {
+                    String name = nameInput.getText().toString().trim();
+                    if (name.isEmpty()) {
+                        Toast.makeText(this, "Introduce el nombre del mapa", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    GameMapRepository.addMap(new GameMap(name, false));
+                    mapAdapter.notifyDataSetChanged();
+                    Toast.makeText(this, "Mapa creado", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 }

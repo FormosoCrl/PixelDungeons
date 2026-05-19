@@ -1,0 +1,25 @@
+# Android
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.keystore
+!debug.keystore
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle
+gradle-wrapper.jar
+.gradletasknamecache
+
+# docs generated
+docs/*.pdf

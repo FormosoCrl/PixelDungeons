@@ -66,9 +66,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
                 holder.actionButton.setEnabled(item.getQuantity() > 0);
             } else {
                 if (item.isEquipped()) {
-                    holder.actionButton.setText("Equipado");
-                    holder.actionButton.setEnabled(false);
-                    holder.actionButton.setAlpha(0.4f);
+                    holder.actionButton.setText("Desequipar");
+                    holder.actionButton.setEnabled(true);
                 } else {
                     holder.actionButton.setText("Equipar");
                     holder.actionButton.setEnabled(item.getQuantity() > 0);

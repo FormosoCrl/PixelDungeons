@@ -14,11 +14,15 @@ def registro(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
     data = _body(request)
-    if Usuario.objects.filter(username=data['username']).exists():
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+    if not username or not password:
+        return JsonResponse({'error': 'Faltan campos obligatorios'}, status=400)
+    if Usuario.objects.filter(username=username).exists():
         return JsonResponse({'error': 'Usuario ya existe'}, status=400)
     u = Usuario.objects.create(
-        username=data['username'],
-        password=make_password(data['password'])
+        username=username,
+        password=make_password(password)
     )
     return JsonResponse({'id': u.id, 'username': u.username}, status=201)
 
@@ -51,6 +55,8 @@ def salas(request):
         return JsonResponse(qs, safe=False)
     if request.method == 'POST':
         data = _body(request)
+        if not data.get('codigo') or not data.get('nombre') or not data.get('master_id'):
+            return JsonResponse({'error': 'Faltan campos obligatorios'}, status=400)
         s = Sala.objects.create(
             codigo=data['codigo'],
             nombre=data['nombre'],
@@ -77,6 +83,9 @@ def heroes(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
     data = _body(request)
+    required = ('name', 'race', 'hero_class', 'hp', 'max_hp', 'strength', 'dex', 'defence', 'mana', 'owner_id', 'sala_id')
+    if any(data.get(f) is None for f in required):
+        return JsonResponse({'error': 'Faltan campos obligatorios'}, status=400)
     h = Hero.objects.create(
         name=data['name'],
         race=data['race'],
@@ -110,6 +119,11 @@ def hero_detalle(request, hero_id):
         h = Hero.objects.get(id=hero_id)
     except Hero.DoesNotExist:
         return JsonResponse({'error': 'Héroe no encontrado'}, status=404)
+    if request.method == 'GET':
+        return JsonResponse({
+            'id': h.id, 'name': h.name, 'hp': h.hp, 'max_hp': h.max_hp,
+            'strength': h.strength, 'dex': h.dex, 'defence': h.defence, 'mana': h.mana
+        })
     if request.method == 'PUT':
         data = _body(request)
         for field in ('hp', 'max_hp', 'strength', 'dex', 'defence', 'mana'):
@@ -126,8 +140,9 @@ def hero_detalle(request, hero_id):
 @csrf_exempt
 def items(request):
     if request.method == 'GET':
+        sala_id = request.GET.get('sala_id')
         tipo = request.GET.get('tipo')
-        qs = Item.objects.all()
+        qs = Item.objects.filter(sala_id=sala_id) if sala_id else Item.objects.all()
         if tipo:
             qs = qs.filter(item_type=tipo)
         return JsonResponse(list(qs.values(
@@ -141,7 +156,8 @@ def items(request):
             consumable=data.get('consumable', False),
             description=data.get('description', ''),
             bonus_stat=data.get('bonus_stat', 'none'),
-            bonus_value=data.get('bonus_value', 0)
+            bonus_value=data.get('bonus_value', 0),
+            sala_id=data.get('sala_id')
         )
         return JsonResponse({'id': it.id, 'name': it.name}, status=201)
     return JsonResponse({'error': 'Método no permitido'}, status=405)
@@ -215,16 +231,17 @@ def inventario_item(request, hero_id, item_id):
 @csrf_exempt
 def mapas_sala(request, sala_id):
     if request.method == 'GET':
-        qs = list(GameMap.objects.filter(sala_id=sala_id).values('id', 'name', 'visible'))
+        qs = list(GameMap.objects.filter(sala_id=sala_id).values('id', 'name', 'visible', 'image'))
         return JsonResponse(qs, safe=False)
     if request.method == 'POST':
         data = _body(request)
         m = GameMap.objects.create(
             name=data['name'],
             sala_id=sala_id,
-            visible=data.get('visible', False)
+            visible=data.get('visible', False),
+            image=data.get('image', '')
         )
-        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible}, status=201)
+        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible, 'image': m.image}, status=201)
     return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
@@ -240,8 +257,10 @@ def mapa_detalle(request, mapa_id):
             m.visible = data['visible']
         if 'name' in data:
             m.name = data['name']
+        if 'image' in data:
+            m.image = data['image']
         m.save()
-        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible})
+        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible, 'image': m.image})
     if request.method == 'DELETE':
         m.delete()
         return JsonResponse({'ok': True})

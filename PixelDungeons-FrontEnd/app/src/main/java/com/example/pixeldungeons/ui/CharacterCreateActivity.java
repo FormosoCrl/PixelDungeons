@@ -7,15 +7,17 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.pixeldungeons.R;
-import com.example.pixeldungeons.data.HeroRepository;
-import com.example.pixeldungeons.model.Hero;
+import com.example.pixeldungeons.network.ApiClient;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CharacterCreateActivity extends AppCompatActivity {
 
@@ -25,59 +27,70 @@ public class CharacterCreateActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_character_create);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        int userId = getIntent().getIntExtra("userId", -1);
+        int salaId = getIntent().getIntExtra("salaId", -1);
 
         EditText nameInput = findViewById(R.id.name_input);
         Spinner raceSpinner = findViewById(R.id.race_spiner);
         Spinner classSpinner = findViewById(R.id.class_spiner);
         Button createButton = findViewById(R.id.create_character_button);
 
-        ArrayAdapter<String> raceAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, RACES);
-        raceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        raceSpinner.setAdapter(raceAdapter);
-
-        ArrayAdapter<String> classAdapter = new ArrayAdapter<>(
-                this, android.R.layout.simple_spinner_item, CLASSES);
-        classAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        classSpinner.setAdapter(classAdapter);
+        raceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, RACES));
+        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CLASSES));
 
         createButton.setOnClickListener(v -> {
             String name = nameInput.getText().toString().trim();
-
             if (name.isEmpty()) {
                 Toast.makeText(this, "Introduce el nombre del personaje", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            String race = (String) raceSpinner.getSelectedItem();
             String heroClass = (String) classSpinner.getSelectedItem();
-
             int[] stats = generateStatsForClass(heroClass);
-            Hero newHero = new Hero(name, race, heroClass,
-                    stats[0], stats[0], stats[1], stats[2], stats[3], stats[4]);
 
-            HeroRepository.addHero(newHero);
-            Toast.makeText(this, "Personaje creado", Toast.LENGTH_SHORT).show();
-            finish();
+            Map<String, Object> body = new HashMap<>();
+            body.put("name", name);
+            body.put("race", raceSpinner.getSelectedItem());
+            body.put("hero_class", heroClass);
+            body.put("hp", stats[0]);
+            body.put("max_hp", stats[0]);
+            body.put("strength", stats[1]);
+            body.put("dex", stats[2]);
+            body.put("defence", stats[3]);
+            body.put("mana", stats[4]);
+            body.put("owner_id", userId);
+            body.put("sala_id", salaId);
+
+            ApiClient.getService().crearHero(body).enqueue(new Callback<Map<String, Object>>() {
+                @Override
+                public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(CharacterCreateActivity.this, "Personaje creado", Toast.LENGTH_SHORT).show();
+                        finish();
+                    } else {
+                        Toast.makeText(CharacterCreateActivity.this, "Error al crear el personaje", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                    Toast.makeText(CharacterCreateActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 
     private int[] generateStatsForClass(String heroClass) {
         switch (heroClass) {
-            case "Guerrero":   return new int[]{30, 18, 12, 14, 0};
-            case "Arquero":    return new int[]{22, 10, 24, 8, 6};
-            case "Mago":       return new int[]{18, 6, 12, 6, 20};
-            case "Berserker":  return new int[]{35, 22, 8, 10, 0};
-            case "Pícaro":     return new int[]{20, 12, 22, 8, 4};
-            case "Clérigo":    return new int[]{24, 12, 10, 12, 16};
-            default:           return new int[]{20, 10, 10, 10, 0};
+            case "Guerrero":  return new int[]{30, 18, 12, 14, 0};
+            case "Arquero":   return new int[]{22, 10, 24, 8,  6};
+            case "Mago":      return new int[]{18, 6,  12, 6,  20};
+            case "Berserker": return new int[]{35, 22, 8,  10, 0};
+            case "Pícaro":    return new int[]{20, 12, 22, 8,  4};
+            case "Clérigo":   return new int[]{24, 12, 10, 12, 16};
+            default:          return new int[]{20, 10, 10, 10, 0};
         }
     }
 }

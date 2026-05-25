@@ -33,12 +33,14 @@ class Item(models.Model):
     description = models.CharField(max_length=200)
     bonus_stat = models.CharField(max_length=10, default='none')
     bonus_value = models.IntegerField(default=0)
+    sala = models.ForeignKey(Sala, on_delete=models.CASCADE, related_name='items', null=True, blank=True)
 
 
 class GameMap(models.Model):
     name = models.CharField(max_length=100)
     sala = models.ForeignKey(Sala, on_delete=models.CASCADE, related_name='maps')
     visible = models.BooleanField(default=False)
+    image = models.TextField(blank=True, default='')
 
 
 class InventoryEntry(models.Model):

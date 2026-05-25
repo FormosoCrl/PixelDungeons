@@ -1,58 +1,117 @@
 package com.example.pixeldungeons.ui;
 
 import android.app.AlertDialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Base64;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pixeldungeons.R;
-import com.example.pixeldungeons.data.GameMapRepository;
 import com.example.pixeldungeons.model.GameMap;
+import com.example.pixeldungeons.network.ApiClient;
 import com.example.pixeldungeons.ui.adapter.MapAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MapManagerActivity extends AppCompatActivity {
 
     private MapAdapter mapAdapter;
+    private final List<GameMap> maps = new ArrayList<>();
+    private int salaId;
+    private String pendingImageBase64 = "";
+    private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_map_manager);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
+        salaId = getIntent().getIntExtra("salaId", -1);
+
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        pendingImageBase64 = uriToBase64(uri);
+                    }
+                    showAddMapDialog();
+                }
+        );
 
         RecyclerView mapsRecycler = findViewById(R.id.maps_recycler);
         FloatingActionButton uploadButton = findViewById(R.id.upload_map_button);
 
-        mapAdapter = new MapAdapter(GameMapRepository.getMaps(), position -> {
-            GameMapRepository.setVisible(position);
-            mapAdapter.notifyDataSetChanged();
+        mapAdapter = new MapAdapter(maps, position -> {
+            GameMap map = maps.get(position);
+            Map<String, Object> body = new HashMap<>();
+            body.put("visible", !map.isVisible());
+            ApiClient.getService().actualizarMapa(map.getId(), body).enqueue(new Callback<Map<String, Object>>() {
+                @Override
+                public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                    if (response.isSuccessful()) cargarMapas();
+                }
+
+                @Override
+                public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                    Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
 
         mapsRecycler.setLayoutManager(new GridLayoutManager(this, 2));
         mapsRecycler.setAdapter(mapAdapter);
 
-        uploadButton.setOnClickListener(v -> showAddMapDialog());
+        uploadButton.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (mapAdapter != null) mapAdapter.notifyDataSetChanged();
+        cargarMapas();
+    }
+
+    private void cargarMapas() {
+        ApiClient.getService().getMapas(salaId).enqueue(new Callback<List<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    maps.clear();
+                    for (Map<String, Object> m : response.body()) {
+                        String img = m.get("image") != null ? (String) m.get("image") : "";
+                        GameMap map = new GameMap((String) m.get("name"), (Boolean) m.get("visible"), img);
+                        map.setId(((Double) m.get("id")).intValue());
+                        maps.add(map);
+                    }
+                    mapAdapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
+                Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void showAddMapDialog() {
@@ -65,6 +124,22 @@ public class MapManagerActivity extends AppCompatActivity {
         nameInput.setHint("Nombre del mapa");
         container.addView(nameInput);
 
+        ImageView preview = new ImageView(this);
+        int previewHeight = (int) (200 * getResources().getDisplayMetrics().density);
+        preview.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, previewHeight));
+        preview.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        preview.setPadding(0, padding / 2, 0, 0);
+
+        if (!pendingImageBase64.isEmpty()) {
+            byte[] bytes = Base64.decode(pendingImageBase64, Base64.NO_WRAP);
+            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            preview.setImageBitmap(bmp);
+        } else {
+            preview.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
+        container.addView(preview);
+
         new AlertDialog.Builder(this)
                 .setTitle("Añadir mapa")
                 .setView(container)
@@ -74,11 +149,41 @@ public class MapManagerActivity extends AppCompatActivity {
                         Toast.makeText(this, "Introduce el nombre del mapa", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    GameMapRepository.addMap(new GameMap(name, false));
-                    mapAdapter.notifyDataSetChanged();
-                    Toast.makeText(this, "Mapa creado", Toast.LENGTH_SHORT).show();
+                    Map<String, Object> body = new HashMap<>();
+                    body.put("name", name);
+                    body.put("image", pendingImageBase64);
+                    pendingImageBase64 = "";
+                    ApiClient.getService().crearMapa(salaId, body).enqueue(new Callback<Map<String, Object>>() {
+                        @Override
+                        public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                            if (response.isSuccessful()) {
+                                cargarMapas();
+                                Toast.makeText(MapManagerActivity.this, "Mapa creado", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                            Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 })
-                .setNegativeButton("Cancelar", null)
+                .setNegativeButton("Cancelar", (d, w) -> pendingImageBase64 = "")
                 .show();
+    }
+
+    private String uriToBase64(Uri uri) {
+        try {
+            InputStream is = getContentResolver().openInputStream(uri);
+            if (is == null) return "";
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            if (bitmap == null) return "";
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 600, 600, true);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+            return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+        } catch (Exception e) {
+            return "";
+        }
     }
 }

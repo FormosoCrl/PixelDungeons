@@ -1,8 +1,12 @@
 package com.example.pixeldungeons.ui.adapter;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -40,6 +44,16 @@ public class MapAdapter extends RecyclerView.Adapter<MapAdapter.ViewHolder> {
         GameMap map = maps.get(position);
         holder.nameText.setText(map.getName());
         holder.visibleTag.setVisibility(map.isVisible() ? View.VISIBLE : View.GONE);
+
+        String img = map.getImage();
+        if (img != null && !img.isEmpty()) {
+            byte[] bytes = Base64.decode(img, Base64.NO_WRAP);
+            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            holder.thumbnail.setImageBitmap(bmp);
+        } else {
+            holder.thumbnail.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
+
         holder.itemView.setOnClickListener(v -> listener.onMapClick(position));
     }
 
@@ -51,11 +65,13 @@ public class MapAdapter extends RecyclerView.Adapter<MapAdapter.ViewHolder> {
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView nameText;
         TextView visibleTag;
+        ImageView thumbnail;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             nameText = itemView.findViewById(R.id.map_name);
             visibleTag = itemView.findViewById(R.id.map_visible_tag);
+            thumbnail = itemView.findViewById(R.id.map_thumbnail);
         }
     }
 }

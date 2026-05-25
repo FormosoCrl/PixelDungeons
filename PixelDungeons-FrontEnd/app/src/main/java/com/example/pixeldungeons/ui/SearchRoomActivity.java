@@ -6,41 +6,60 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.pixeldungeons.R;
+import com.example.pixeldungeons.network.ApiClient;
+
+import java.util.Map;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class SearchRoomActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_search_room);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
-        EditText nameInput = findViewById(R.id.name_input);
+        int userId = getIntent().getIntExtra("userId", -1);
+        String username = getIntent().getStringExtra("username");
+
+        EditText codigoInput = findViewById(R.id.name_input);
         Button searchButton = findViewById(R.id.search_button);
 
         searchButton.setOnClickListener(v -> {
-            String roomName = nameInput.getText().toString().trim();
+            String codigo = codigoInput.getText().toString().trim();
 
-            if (roomName.isEmpty()) {
-                Toast.makeText(this, "Introduce el nombre de la sala", Toast.LENGTH_SHORT).show();
+            if (codigo.isEmpty()) {
+                Toast.makeText(this, "Introduce el código de la sala", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            Intent intent = new Intent(SearchRoomActivity.this, CharacterListActivity.class);
-            intent.putExtra("room_name", roomName);
-            startActivity(intent);
+            ApiClient.getService().buscarSala(codigo).enqueue(new Callback<Map<String, Object>>() {
+                @Override
+                public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        int salaId = ((Double) response.body().get("id")).intValue();
+                        String nombre = (String) response.body().get("nombre");
+                        Intent intent = new Intent(SearchRoomActivity.this, CharacterListActivity.class);
+                        intent.putExtra("salaId", salaId);
+                        intent.putExtra("salaNombre", nombre);
+                        intent.putExtra("userId", userId);
+                        intent.putExtra("username", username);
+                        startActivity(intent);
+                    } else {
+                        Toast.makeText(SearchRoomActivity.this, "Sala no encontrada", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                    Toast.makeText(SearchRoomActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 }

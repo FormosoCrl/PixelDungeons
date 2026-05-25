@@ -27,7 +27,7 @@
         android:id="@+id/name_input"
         android:layout_width="350dp"
         android:layout_height="wrap_content"
-        android:hint="Introduce tu nomrbe de personaje"
+        android:hint="Introduce tu nombre de personaje"
         android:textSize="20sp"
         app:layout_constraintTop_toBottomOf="@id/character_crate_title"
         app:layout_constraintBottom_toBottomOf="parent"

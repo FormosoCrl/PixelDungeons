@@ -2,6 +2,7 @@ package com.example.pixeldungeons.model;
 
 public class Item {
 
+    private int id;
     private String name;
     private String type;
     private int quantity;
@@ -26,6 +27,8 @@ public class Item {
         this(name, type, quantity, consumable, description, "none", 0);
     }
 
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getName() { return name; }
     public String getType() { return type; }
     public int getQuantity() { return quantity; }
@@ -36,11 +39,6 @@ public class Item {
     public String getBonusStat() { return bonusStat; }
     public int getBonusValue() { return bonusValue; }
 
-    public void decreaseQuantity() {
-        if (quantity > 0) quantity--;
-    }
-
-    public void increaseQuantity() {
-        quantity++;
-    }
+    public void decreaseQuantity() { if (quantity > 0) quantity--; }
+    public void increaseQuantity() { quantity++; }
 }

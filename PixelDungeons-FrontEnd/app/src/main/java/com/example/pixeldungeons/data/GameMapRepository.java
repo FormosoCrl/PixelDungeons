@@ -9,10 +9,10 @@ import java.util.List;
 public class GameMapRepository {
 
     private static final List<GameMap> maps = new ArrayList<>(Arrays.asList(
-            new GameMap("Cripta nivel 1", true),
-            new GameMap("Bosque Oscuro", false),
-            new GameMap("Torre del Mago", false),
-            new GameMap("Caverna del Dragón", false)
+            new GameMap("Cripta nivel 1", true, ""),
+            new GameMap("Bosque Oscuro", false, ""),
+            new GameMap("Torre del Mago", false, ""),
+            new GameMap("Caverna del Dragón", false, "")
     ));
 
     public static List<GameMap> getMaps() {

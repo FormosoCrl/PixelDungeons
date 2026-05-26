@@ -36,7 +36,10 @@ public class CharacterListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_character_list);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
+        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         userId = getIntent().getIntExtra("userId", -1);
         salaId = getIntent().getIntExtra("salaId", -1);
@@ -92,19 +95,19 @@ public class CharacterListActivity extends AppCompatActivity {
                     for (Map<String, Object> m : response.body()) {
                         Object ownerRaw = m.get("owner_id");
                         if (ownerRaw == null) continue;
-                        if (((Double) ownerRaw).intValue() != userId) continue;
+                        if (((Number)ownerRaw).intValue() != userId) continue;
                         Hero h = new Hero(
                                 (String) m.get("name"),
                                 (String) m.get("race"),
                                 (String) m.get("hero_class"),
-                                ((Double) m.get("hp")).intValue(),
-                                ((Double) m.get("max_hp")).intValue(),
-                                ((Double) m.get("strength")).intValue(),
-                                ((Double) m.get("dex")).intValue(),
-                                ((Double) m.get("defence")).intValue(),
-                                ((Double) m.get("mana")).intValue()
+                                ((Number)m.get("hp")).intValue(),
+                                ((Number)m.get("max_hp")).intValue(),
+                                ((Number)m.get("strength")).intValue(),
+                                ((Number)m.get("dex")).intValue(),
+                                ((Number)m.get("defence")).intValue(),
+                                ((Number)m.get("mana")).intValue()
                         );
-                        h.setId(((Double) m.get("id")).intValue());
+                        h.setId(((Number)m.get("id")).intValue());
                         heroes.add(h);
                     }
                     adapter.notifyDataSetChanged();
@@ -114,7 +117,7 @@ public class CharacterListActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(CharacterListActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CharacterListActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -129,3 +132,4 @@ public class CharacterListActivity extends AppCompatActivity {
         }
     }
 }
+

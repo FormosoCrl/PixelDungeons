@@ -64,7 +64,7 @@ public class MapAdapter extends RecyclerView.Adapter<MapAdapter.ViewHolder> {
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView nameText;
-        TextView visibleTag;
+        View visibleTag;
         ImageView thumbnail;
 
         ViewHolder(@NonNull View itemView) {

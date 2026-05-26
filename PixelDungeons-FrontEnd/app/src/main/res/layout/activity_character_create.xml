@@ -1,97 +1,151 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/md_theme_background"
     tools:context=".ui.CharacterCreateActivity">
 
-    <!-- Título -->
-    <TextView
-        android:id="@+id/character_crate_title"
-        android:layout_width="wrap_content"
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Creación de personaje"
-        android:textSize="38sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
+        android:layout_marginStart="28dp"
+        android:layout_marginEnd="28dp"
+        app:cardBackgroundColor="@color/md_theme_surfaceContainerLowest"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.15"
-        />
-    <!-- introducir nombre de personaje -->
-    <EditText
-        android:id="@+id/name_input"
-        android:layout_width="350dp"
-        android:layout_height="wrap_content"
-        android:hint="Introduce tu nombre de personaje"
-        android:textSize="20sp"
-        app:layout_constraintTop_toBottomOf="@id/character_crate_title"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.15"
-        />
-    <!-- textview de selección de raza -->
-    <TextView
-        android:id="@+id/race_selection_text"
+        app:layout_constraintVertical_bias="0.42">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="28dp"
+            android:paddingEnd="28dp"
+            android:paddingTop="32dp"
+            android:paddingBottom="28dp">
+
+            <!-- Título -->
+            <TextView
+                android:id="@+id/character_crate_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Crear personaje"
+                android:textColor="@color/md_theme_primary"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Elige tu nombre, raza y clase"
+                android:textColor="@color/md_theme_onSurfaceVariant"
+                android:textSize="13sp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Nombre -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nombre del personaje"
+                android:layout_marginBottom="20dp"
+                app:startIconDrawable="@drawable/ic_person"
+                app:startIconTint="@color/md_theme_primary"
+                app:boxStrokeColor="@color/md_theme_primary"
+                app:hintTextColor="@color/md_theme_primary"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/name_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:maxLines="1" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Raza -->
+            <TextView
+                android:id="@+id/race_selection_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Raza"
+                android:textColor="@color/md_theme_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:letterSpacing="0.06"
+                android:layout_marginBottom="6dp" />
+
+            <Spinner
+                android:id="@+id/race_spiner"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_spinner"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Clase -->
+            <TextView
+                android:id="@+id/class_selection_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Clase"
+                android:textColor="@color/md_theme_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:letterSpacing="0.06"
+                android:layout_marginBottom="6dp" />
+
+            <Spinner
+                android:id="@+id/class_spiner"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_spinner"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="28dp" />
+
+            <!-- Botón crear -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/create_character_button"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Crear personaje"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/md_theme_primary"
+                app:cornerRadius="26dp" />
+
+        </LinearLayout>
+
+
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+
+
+
+    <include
+        android:id="@+id/theme_toggle"
+        layout="@layout/include_theme_toggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Selecciona tu raza"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/name_input"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"
-        />
-    <!--spinner de selección de raza -->
-    <Spinner
-        android:id="@+id/race_spiner"
-        android:layout_width="350dp"
-        android:layout_height="50dp"
-        app:layout_constraintTop_toBottomOf="@id/race_selection_text"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
-    <!-- textview de selección de clase -->
-    <TextView
-        android:id="@+id/class_selection_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Selecciona tu clase"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:textColor="@color/black"
-        app:layout_constraintTop_toBottomOf="@id/race_spiner"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
-        />
-    <!--spinner de selección de clase -->
-    <Spinner
-        android:id="@+id/class_spiner"
-        android:layout_width="350dp"
-        android:layout_height="50dp"
-        app:layout_constraintTop_toBottomOf="@id/class_selection_text"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        />
-    <!-- boton de creación -->
-    <Button
-        android:id="@+id/create_character_button"
-        android:layout_width="250dp"
-        android:layout_height="80dp"
-        android:text="Crear personaje"
-        android:textSize="20sp"
-        app:layout_constraintTop_toBottomOf="@id/class_spiner"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintVertical_bias="0.25"
-        />
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+

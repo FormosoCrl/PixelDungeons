@@ -251,6 +251,8 @@ def mapa_detalle(request, mapa_id):
         m = GameMap.objects.get(id=mapa_id)
     except GameMap.DoesNotExist:
         return JsonResponse({'error': 'Mapa no encontrado'}, status=404)
+    if request.method == 'GET':
+        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible, 'image': m.image})
     if request.method == 'PUT':
         data = _body(request)
         if 'visible' in data:

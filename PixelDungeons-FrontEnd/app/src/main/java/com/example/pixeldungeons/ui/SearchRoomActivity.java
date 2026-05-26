@@ -22,7 +22,10 @@ public class SearchRoomActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_search_room);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
+        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         int userId = getIntent().getIntExtra("userId", -1);
         String username = getIntent().getStringExtra("username");
@@ -34,7 +37,7 @@ public class SearchRoomActivity extends AppCompatActivity {
             String codigo = codigoInput.getText().toString().trim();
 
             if (codigo.isEmpty()) {
-                Toast.makeText(this, "Introduce el código de la sala", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Introduce el cÃ³digo de la sala", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -42,7 +45,7 @@ public class SearchRoomActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        int salaId = ((Double) response.body().get("id")).intValue();
+                        int salaId = ((Number) response.body().get("id")).intValue();
                         String nombre = (String) response.body().get("nombre");
                         Intent intent = new Intent(SearchRoomActivity.this, CharacterListActivity.class);
                         intent.putExtra("salaId", salaId);
@@ -57,9 +60,10 @@ public class SearchRoomActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(SearchRoomActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SearchRoomActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
                 }
             });
         });
     }
 }
+

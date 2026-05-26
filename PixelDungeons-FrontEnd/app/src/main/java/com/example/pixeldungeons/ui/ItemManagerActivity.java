@@ -33,7 +33,7 @@ import retrofit2.Response;
 public class ItemManagerActivity extends AppCompatActivity {
 
     private static final String[] TYPES = {"Consumible", "Arma", "Armadura", "Hechizo", "Llave", "Otro"};
-    private static final String[] STAT_LABELS = {"Ninguna", "Fuerza (STR)", "Destreza (DEX)", "Defensa (DEF)", "Maná", "Vida (HP)"};
+    private static final String[] STAT_LABELS = {"Ninguna", "Fuerza (STR)", "Destreza (DEX)", "Defensa (DEF)", "ManÃ¡", "Vida (HP)"};
     private static final String[] STAT_KEYS   = {"none", "str", "dex", "def", "mana", "hp"};
 
     private ItemAdapter itemAdapter;
@@ -43,7 +43,10 @@ public class ItemManagerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_item_manager);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
+        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         salaId = getIntent().getIntExtra("salaId", -1);
 
@@ -63,7 +66,7 @@ public class ItemManagerActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -94,9 +97,9 @@ public class ItemManagerActivity extends AppCompatActivity {
                                 (Boolean) m.get("consumable"),
                                 (String) m.get("description"),
                                 (String) m.get("bonus_stat"),
-                                ((Double) m.get("bonus_value")).intValue()
+                                ((Number)m.get("bonus_value")).intValue()
                         );
-                        item.setId(((Double) m.get("id")).intValue());
+                        item.setId(((Number)m.get("id")).intValue());
                         items.add(item);
                     }
                     itemAdapter.notifyDataSetChanged();
@@ -105,7 +108,7 @@ public class ItemManagerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -125,15 +128,15 @@ public class ItemManagerActivity extends AppCompatActivity {
         container.addView(typeSpinner);
 
         CheckBox consumableCheck = new CheckBox(this);
-        consumableCheck.setText("¿Es consumible?");
+        consumableCheck.setText("Â¿Es consumible?");
         container.addView(consumableCheck);
 
         EditText descriptionInput = new EditText(this);
-        descriptionInput.setHint("Efectos o estadísticas");
+        descriptionInput.setHint("Efectos o estadÃ­sticas");
         container.addView(descriptionInput);
 
         TextView statLabel = new TextView(this);
-        statLabel.setText("Estadística que mejora al equipar:");
+        statLabel.setText("EstadÃ­stica que mejora al equipar:");
         container.addView(statLabel);
 
         Spinner statSpinner = new Spinner(this);
@@ -178,7 +181,7 @@ public class ItemManagerActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                            Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
                         }
                     });
                 })
@@ -186,3 +189,4 @@ public class ItemManagerActivity extends AppCompatActivity {
                 .show();
     }
 }
+

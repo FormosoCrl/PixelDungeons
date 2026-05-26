@@ -1,6 +1,6 @@
 package com.example.pixeldungeons.ui;
 
-import android.app.AlertDialog;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -33,7 +33,10 @@ public class MasterDashboardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_master_dashboard);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
+        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         salaId = getIntent().getIntExtra("salaId", -1);
         userId = getIntent().getIntExtra("userId", -1);
@@ -44,7 +47,7 @@ public class MasterDashboardActivity extends AppCompatActivity {
         TextView roomNameTitle = findViewById(R.id.room_name_title);
         TextView roomCodeLabel = findViewById(R.id.room_code_label);
         if (salaNombre != null) roomNameTitle.setText("Sala: " + salaNombre);
-        if (salaCodigo != null) roomCodeLabel.setText("Código: " + salaCodigo);
+        if (salaCodigo != null) roomCodeLabel.setText("CÃ³digo: " + salaCodigo);
 
         RecyclerView playersRecycler = findViewById(R.id.players_recycler);
         Button manageItemsButton = findViewById(R.id.manage_items_button);
@@ -52,31 +55,21 @@ public class MasterDashboardActivity extends AppCompatActivity {
         Button closeRoomButton   = findViewById(R.id.close_room_button);
 
         playerAdapter = new PlayerAdapter(heroes, hero -> {
-            new AlertDialog.Builder(this)
-                    .setTitle(hero.getName())
-                    .setItems(new String[]{"Editar estadísticas", "Ver inventario"}, (dialog, which) -> {
-                        Intent intent;
-                        if (which == 0) {
-                            intent = new Intent(this, CharacterDetailActivity.class);
-                        } else {
-                            intent = new Intent(this, InventoryActivity.class);
-                        }
-                        intent.putExtra("heroId",    hero.getId());
-                        intent.putExtra("name",      hero.getName());
-                        intent.putExtra("race",      hero.getRace());
-                        intent.putExtra("heroClass", hero.getHeroClass());
-                        intent.putExtra("hp",        hero.getHp());
-                        intent.putExtra("maxHp",     hero.getMaxHp());
-                        intent.putExtra("str",       hero.getStr());
-                        intent.putExtra("dex",       hero.getDex());
-                        intent.putExtra("defence",   hero.getDefence());
-                        intent.putExtra("mana",      hero.getMana());
-                        intent.putExtra("userId",    userId);
-                        intent.putExtra("salaId",    salaId);
-                        intent.putExtra("is_master", true);
-                        startActivity(intent);
-                    })
-                    .show();
+            Intent intent = new Intent(this, CharacterDetailActivity.class);
+            intent.putExtra("heroId",    hero.getId());
+            intent.putExtra("name",      hero.getName());
+            intent.putExtra("race",      hero.getRace());
+            intent.putExtra("heroClass", hero.getHeroClass());
+            intent.putExtra("hp",        hero.getHp());
+            intent.putExtra("maxHp",     hero.getMaxHp());
+            intent.putExtra("str",       hero.getStr());
+            intent.putExtra("dex",       hero.getDex());
+            intent.putExtra("defence",   hero.getDefence());
+            intent.putExtra("mana",      hero.getMana());
+            intent.putExtra("userId",    userId);
+            intent.putExtra("salaId",    salaId);
+            intent.putExtra("is_master", true);
+            startActivity(intent);
         });
 
         playersRecycler.setLayoutManager(new LinearLayoutManager(this));
@@ -133,14 +126,14 @@ public class MasterDashboardActivity extends AppCompatActivity {
                                 (String) m.get("name"),
                                 (String) m.get("race"),
                                 (String) m.get("hero_class"),
-                                ((Double) m.get("hp")).intValue(),
-                                ((Double) m.get("max_hp")).intValue(),
-                                ((Double) m.get("strength")).intValue(),
-                                ((Double) m.get("dex")).intValue(),
-                                ((Double) m.get("defence")).intValue(),
-                                ((Double) m.get("mana")).intValue()
+                                ((Number)m.get("hp")).intValue(),
+                                ((Number)m.get("max_hp")).intValue(),
+                                ((Number)m.get("strength")).intValue(),
+                                ((Number)m.get("dex")).intValue(),
+                                ((Number)m.get("defence")).intValue(),
+                                ((Number)m.get("mana")).intValue()
                         );
-                        h.setId(((Double) m.get("id")).intValue());
+                        h.setId(((Number)m.get("id")).intValue());
                         heroes.add(h);
                     }
                     playerAdapter.notifyDataSetChanged();
@@ -149,8 +142,9 @@ public class MasterDashboardActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MasterDashboardActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MasterDashboardActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
             }
         });
     }
 }
+

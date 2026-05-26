@@ -2,7 +2,6 @@ package com.example.pixeldungeons.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,7 +32,10 @@ public class LobbyActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_lobby);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
+        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         userId   = getIntent().getIntExtra("userId", -1);
         username = getIntent().getStringExtra("username");
@@ -42,7 +44,7 @@ public class LobbyActivity extends AppCompatActivity {
         salasRecycler = findViewById(R.id.salas_recycler);
 
         salaAdapter = new SalaAdapter(misSalas, sala -> {
-            int salaId    = ((Double) sala.get("id")).intValue();
+            int salaId    = ((Number) sala.get("id")).intValue();
             String nombre = (String) sala.get("nombre");
             String codigo = (String) sala.get("codigo");
             Intent intent = new Intent(this, MasterDashboardActivity.class);
@@ -87,22 +89,17 @@ public class LobbyActivity extends AppCompatActivity {
                 misSalas.clear();
                 for (Map<String, Object> s : response.body()) {
                     Object masterId = s.get("master_id");
-                    if (masterId != null && ((Double) masterId).intValue() == userId) {
+                    if (masterId != null && ((Number) masterId).intValue() == userId) {
                         misSalas.add(s);
                     }
                 }
                 salaAdapter.notifyDataSetChanged();
-
-                boolean haySalas = !misSalas.isEmpty();
-                misSlasLabel.setVisibility(haySalas ? View.VISIBLE : View.GONE);
-                salasRecycler.setVisibility(haySalas ? View.VISIBLE : View.GONE);
             }
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                misSlasLabel.setVisibility(View.GONE);
-                salasRecycler.setVisibility(View.GONE);
             }
         });
     }
 }
+

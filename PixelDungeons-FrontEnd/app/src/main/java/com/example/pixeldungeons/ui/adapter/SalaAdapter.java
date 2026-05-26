@@ -38,6 +38,7 @@ public class SalaAdapter extends RecyclerView.Adapter<SalaAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Map<String, Object> sala = salas.get(position);
+        holder.numero.setText(String.format("%02d", position + 1));
         holder.nombre.setText((String) sala.get("nombre"));
         holder.continuar.setOnClickListener(v -> listener.onContinuar(sala));
     }
@@ -46,11 +47,12 @@ public class SalaAdapter extends RecyclerView.Adapter<SalaAdapter.ViewHolder> {
     public int getItemCount() { return salas.size(); }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView nombre;
-        Button continuar;
+        TextView numero, nombre;
+        android.widget.Button continuar;
         ViewHolder(@NonNull View v) {
             super(v);
-            nombre   = v.findViewById(R.id.sala_nombre);
+            numero    = v.findViewById(R.id.sala_numero);
+            nombre    = v.findViewById(R.id.sala_nombre);
             continuar = v.findViewById(R.id.sala_continuar);
         }
     }

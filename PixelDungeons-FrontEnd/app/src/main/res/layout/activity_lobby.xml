@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/md_theme_background"
-    tools:context=".ui.LobbyActivity">
+    tools:context=".ui.LobbyActivity"
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="0dp"
@@ -63,7 +64,7 @@
             <!-- RecyclerView salas con degradado de scroll -->
             <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="160dp"
+                android:layout_height="100dp"
                 android:layout_marginBottom="20dp">
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -110,6 +111,24 @@
                 app:cornerRadius="12dp"
                 app:icon="@android:drawable/ic_input_add"
                 app:iconTint="@color/white" />
+
+            <!-- Cerrar sesión -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/logout_button"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginTop="12dp"
+                android:text="Cerrar sesión"
+                android:textSize="15sp"
+                android:textAllCaps="true"
+                android:textStyle="bold"
+                android:textColor="@color/md_theme_error"
+                app:cornerRadius="12dp"
+                app:strokeColor="@color/md_theme_error"
+                app:strokeWidth="1.5dp"
+                app:icon="@android:drawable/ic_menu_close_clear_cancel"
+                app:iconTint="@color/md_theme_error" />
 
         </LinearLayout>
 

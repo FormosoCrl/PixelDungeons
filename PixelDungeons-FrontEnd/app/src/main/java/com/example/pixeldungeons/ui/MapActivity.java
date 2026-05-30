@@ -35,6 +35,8 @@ public class MapActivity extends AppCompatActivity {
     private ImageView mapImage;
     private int salaId;
     private Intent received;
+    private int mapaRetries = 0;
+    private static final int MAX_MAPA_RETRIES = 3;
 
     private final Matrix matrix = new Matrix();
     private ScaleGestureDetector scaleDetector;
@@ -52,7 +54,6 @@ public class MapActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_map);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         received = getIntent();
         salaId   = received.getIntExtra("salaId", -1);
@@ -167,6 +168,7 @@ public class MapActivity extends AppCompatActivity {
             public void onResponse(Call<List<Map<String, Object>>> call,
                                    Response<List<Map<String, Object>>> response) {
                 if (!response.isSuccessful() || response.body() == null) return;
+                mapaRetries = 0;
 
                 String nombre = null;
                 String imagen = "";
@@ -205,9 +207,15 @@ public class MapActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MapActivity.this,
-                        "Error al cargar el mapa: " + t.getMessage(),
-                        Toast.LENGTH_LONG).show();
+                if (mapaRetries < MAX_MAPA_RETRIES) {
+                    mapaRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(MapActivity.this::cargarMapa, 800);
+                } else {
+                    Toast.makeText(MapActivity.this,
+                            "Error al cargar el mapa: " + t.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }

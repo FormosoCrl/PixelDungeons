@@ -32,6 +32,8 @@ public class CharacterListActivity extends AppCompatActivity {
     private RecyclerView recycler;
     private int userId, salaId;
     private String username, salaNombre;
+    private int heroesRetries = 0;
+    private static final int MAX_HEROES_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +41,6 @@ public class CharacterListActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_character_list);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         userId = getIntent().getIntExtra("userId", -1);
         salaId = getIntent().getIntExtra("salaId", -1);
@@ -62,6 +63,8 @@ public class CharacterListActivity extends AppCompatActivity {
             intent.putExtra("dex", hero.getDex());
             intent.putExtra("defence", hero.getDefence());
             intent.putExtra("mana", hero.getMana());
+            intent.putExtra("level", hero.getLevel());
+            intent.putExtra("xp", hero.getXp());
             intent.putExtra("userId", userId);
             intent.putExtra("salaId", salaId);
             intent.putExtra("username", username);
@@ -91,6 +94,7 @@ public class CharacterListActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    heroesRetries = 0;
                     heroes.clear();
                     for (Map<String, Object> m : response.body()) {
                         Object ownerRaw = m.get("owner_id");
@@ -108,6 +112,8 @@ public class CharacterListActivity extends AppCompatActivity {
                                 ((Number)m.get("mana")).intValue()
                         );
                         h.setId(((Number)m.get("id")).intValue());
+                        if (m.get("level") != null) h.setLevel(((Number)m.get("level")).intValue());
+                        if (m.get("xp") != null) h.setXp(((Number)m.get("xp")).intValue());
                         heroes.add(h);
                     }
                     adapter.notifyDataSetChanged();
@@ -117,7 +123,13 @@ public class CharacterListActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(CharacterListActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                if (heroesRetries < MAX_HEROES_RETRIES) {
+                    heroesRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(CharacterListActivity.this::cargarHeroes, 800);
+                } else {
+                    Toast.makeText(CharacterListActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

@@ -33,12 +33,14 @@ import retrofit2.Response;
 public class ItemManagerActivity extends AppCompatActivity {
 
     private static final String[] TYPES = {"Consumible", "Arma", "Armadura", "Hechizo", "Llave", "Otro"};
-    private static final String[] STAT_LABELS = {"Ninguna", "Fuerza (STR)", "Destreza (DEX)", "Defensa (DEF)", "ManÃ¡", "Vida (HP)"};
+    private static final String[] STAT_LABELS = {"Ninguna", "Fuerza (STR)", "Destreza (DEX)", "Defensa (DEF)", "Maná", "Vida (HP)"};
     private static final String[] STAT_KEYS   = {"none", "str", "dex", "def", "mana", "hp"};
 
     private ItemAdapter itemAdapter;
     private final List<Item> items = new ArrayList<>();
     private int salaId;
+    private int itemsRetries = 0;
+    private static final int MAX_ITEMS_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,7 +48,6 @@ public class ItemManagerActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_item_manager);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         salaId = getIntent().getIntExtra("salaId", -1);
 
@@ -66,7 +67,7 @@ public class ItemManagerActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -88,6 +89,7 @@ public class ItemManagerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    itemsRetries = 0;
                     items.clear();
                     for (Map<String, Object> m : response.body()) {
                         Item item = new Item(
@@ -108,7 +110,13 @@ public class ItemManagerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                if (itemsRetries < MAX_ITEMS_RETRIES) {
+                    itemsRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(ItemManagerActivity.this::cargarItems, 800);
+                } else {
+                    Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -128,15 +136,15 @@ public class ItemManagerActivity extends AppCompatActivity {
         container.addView(typeSpinner);
 
         CheckBox consumableCheck = new CheckBox(this);
-        consumableCheck.setText("Â¿Es consumible?");
+        consumableCheck.setText("¿Es consumible?");
         container.addView(consumableCheck);
 
         EditText descriptionInput = new EditText(this);
-        descriptionInput.setHint("Efectos o estadÃ­sticas");
+        descriptionInput.setHint("Efectos o estadísticas");
         container.addView(descriptionInput);
 
         TextView statLabel = new TextView(this);
-        statLabel.setText("EstadÃ­stica que mejora al equipar:");
+        statLabel.setText("Estadística que mejora al equipar:");
         container.addView(statLabel);
 
         Spinner statSpinner = new Spinner(this);
@@ -181,7 +189,7 @@ public class ItemManagerActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                            Toast.makeText(ItemManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                         }
                     });
                 })

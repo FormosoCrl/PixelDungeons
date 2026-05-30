@@ -22,6 +22,8 @@ class Hero(models.Model):
     dex = models.IntegerField()
     defence = models.IntegerField()
     mana = models.IntegerField()
+    level = models.IntegerField(default=1)
+    xp = models.IntegerField(default=0)
     owner = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='heroes')
     sala = models.ForeignKey(Sala, on_delete=models.CASCADE, related_name='heroes')
 

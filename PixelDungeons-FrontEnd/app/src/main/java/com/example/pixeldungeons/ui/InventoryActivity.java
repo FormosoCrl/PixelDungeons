@@ -37,6 +37,8 @@ public class InventoryActivity extends AppCompatActivity {
     private int heroId, userId, salaId;
     private boolean isMaster;
     private Intent received;
+    private int invRetries = 0;
+    private static final int MAX_INV_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +46,6 @@ public class InventoryActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_inventory);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         received = getIntent();
         isMaster = received.getBooleanExtra("is_master", false);
@@ -99,6 +100,7 @@ public class InventoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    invRetries = 0;
                     inventory.clear();
                     for (Map<String, Object> m : response.body()) {
                         Item item = new Item(
@@ -121,7 +123,13 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                if (invRetries < MAX_INV_RETRIES) {
+                    invRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(InventoryActivity.this::cargarInventario, 800);
+                } else {
+                    Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -141,7 +149,7 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -159,7 +167,7 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -188,7 +196,7 @@ public class InventoryActivity extends AppCompatActivity {
                             }
                             @Override
                             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                             }
                         });
             } else {
@@ -203,7 +211,7 @@ public class InventoryActivity extends AppCompatActivity {
                             }
                             @Override
                             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                             }
                         });
             }
@@ -217,7 +225,7 @@ public class InventoryActivity extends AppCompatActivity {
                 }
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                 }
             });
         } else {
@@ -237,7 +245,7 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -267,14 +275,14 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void mostrarDialogDarItem() {
         if (catalog.isEmpty()) {
-            Toast.makeText(this, "No hay objetos en el catÃ¡logo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "No hay objetos en el catálogo", Toast.LENGTH_SHORT).show();
             return;
         }
         String[] names = new String[catalog.size()];
@@ -299,7 +307,7 @@ public class InventoryActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                            Toast.makeText(InventoryActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                         }
                     });
                 })

@@ -21,8 +21,28 @@ import retrofit2.Response;
 
 public class CharacterCreateActivity extends AppCompatActivity {
 
+    // Valores canónicos que se envían al backend (deben coincidir con las
+    // tablas de crecimiento del servidor). No tocar el texto.
     private static final String[] RACES = {"Humano", "Elfo", "Enano", "Orco", "Mediano"};
-    private static final String[] CLASSES = {"Guerrero", "Arquero", "Mago", "Berserker", "PÃ­caro", "ClÃ©rigo"};
+    private static final String[] CLASSES = {"Guerrero", "Arquero", "Mago", "Berserker", "Pícaro", "Clérigo"};
+
+    // Texto que se muestra en el spinner: indica los bonus de stats por nivel.
+    // Las razas suman a esos stats; las clases marcan su mejor (↑) y peor (↓) atributo.
+    private static final String[] RACES_DISPLAY = {
+            "Humano (+todo)",
+            "Elfo (+DEX/+MANA)",
+            "Enano (+HP/+DEF)",
+            "Orco (+STR/+HP)",
+            "Mediano (+DEX/+DEF)"
+    };
+    private static final String[] CLASSES_DISPLAY = {
+            "Guerrero (↑STR ↓MANA)",
+            "Arquero (↑DEX ↓MANA)",
+            "Mago (↑MANA ↓STR)",
+            "Berserker (↑STR ↓DEF)",
+            "Pícaro (↑DEX ↓DEF)",
+            "Clérigo (↑MANA ↓STR)"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +50,6 @@ public class CharacterCreateActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_character_create);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         int userId = getIntent().getIntExtra("userId", -1);
         int salaId = getIntent().getIntExtra("salaId", -1);
@@ -40,8 +59,8 @@ public class CharacterCreateActivity extends AppCompatActivity {
         Spinner classSpinner = findViewById(R.id.class_spiner);
         Button createButton = findViewById(R.id.create_character_button);
 
-        raceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, RACES));
-        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CLASSES));
+        raceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, RACES_DISPLAY));
+        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CLASSES_DISPLAY));
 
         createButton.setOnClickListener(v -> {
             String name = nameInput.getText().toString().trim();
@@ -50,12 +69,14 @@ public class CharacterCreateActivity extends AppCompatActivity {
                 return;
             }
 
-            String heroClass = (String) classSpinner.getSelectedItem();
+            // El spinner muestra el texto con bonus, pero enviamos el valor canónico.
+            String race = RACES[raceSpinner.getSelectedItemPosition()];
+            String heroClass = CLASSES[classSpinner.getSelectedItemPosition()];
             int[] stats = generateStatsForClass(heroClass);
 
             Map<String, Object> body = new HashMap<>();
             body.put("name", name);
-            body.put("race", raceSpinner.getSelectedItem());
+            body.put("race", race);
             body.put("hero_class", heroClass);
             body.put("hp", stats[0]);
             body.put("max_hp", stats[0]);
@@ -79,7 +100,7 @@ public class CharacterCreateActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(CharacterCreateActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CharacterCreateActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                 }
             });
         });
@@ -91,10 +112,9 @@ public class CharacterCreateActivity extends AppCompatActivity {
             case "Arquero":   return new int[]{22, 10, 24, 8,  6};
             case "Mago":      return new int[]{18, 6,  12, 6,  20};
             case "Berserker": return new int[]{35, 22, 8,  10, 0};
-            case "PÃ­caro":    return new int[]{20, 12, 22, 8,  4};
-            case "ClÃ©rigo":   return new int[]{24, 12, 10, 12, 16};
+            case "Pícaro":    return new int[]{20, 12, 22, 8,  4};
+            case "Clérigo":   return new int[]{24, 12, 10, 12, 16};
             default:          return new int[]{20, 10, 10, 10, 0};
         }
     }
 }
-

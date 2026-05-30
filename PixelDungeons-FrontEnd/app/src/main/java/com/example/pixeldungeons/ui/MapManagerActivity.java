@@ -39,6 +39,8 @@ public class MapManagerActivity extends AppCompatActivity {
     private MapAdapter mapAdapter;
     private final List<GameMap> maps = new ArrayList<>();
     private int salaId;
+    private int mapsRetries = 0;
+    private static final int MAX_MAPS_RETRIES = 3;
     private String pendingImageBase64 = "";
     private ActivityResultLauncher<String> imagePickerLauncher;
 
@@ -48,7 +50,6 @@ public class MapManagerActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_map_manager);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         salaId = getIntent().getIntExtra("salaId", -1);
 
@@ -129,7 +130,7 @@ public class MapManagerActivity extends AppCompatActivity {
             }
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                Toast.makeText(MapManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -139,6 +140,7 @@ public class MapManagerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    mapsRetries = 0;
                     maps.clear();
                     for (Map<String, Object> m : response.body()) {
                         String img = m.get("image") != null ? (String) m.get("image") : "";
@@ -152,7 +154,13 @@ public class MapManagerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MapManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                if (mapsRetries < MAX_MAPS_RETRIES) {
+                    mapsRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(MapManagerActivity.this::cargarMapas, 800);
+                } else {
+                    Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -184,7 +192,7 @@ public class MapManagerActivity extends AppCompatActivity {
         container.addView(preview);
 
         new AlertDialog.Builder(this)
-                .setTitle("AÃ±adir mapa")
+                .setTitle("Añadir mapa")
                 .setView(container)
                 .setPositiveButton("Crear", (dialog, which) -> {
                     String name = nameInput.getText().toString().trim();
@@ -207,7 +215,7 @@ public class MapManagerActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                            Toast.makeText(MapManagerActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                         }
                     });
                 })
@@ -221,7 +229,7 @@ public class MapManagerActivity extends AppCompatActivity {
             if (is == null) return "";
             Bitmap bitmap = BitmapFactory.decodeStream(is);
             if (bitmap == null) return "";
-            // MÃ¡ximo 400x400 al 50% de calidad â†’ ~10KB base64 por mapa
+            // Máximo 400x400 al 50% de calidad → ~10KB base64 por mapa
             Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 400, 400, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             scaled.compress(Bitmap.CompressFormat.JPEG, 50, baos);

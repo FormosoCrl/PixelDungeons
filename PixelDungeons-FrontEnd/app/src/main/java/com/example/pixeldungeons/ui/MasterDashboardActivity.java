@@ -29,6 +29,8 @@ public class MasterDashboardActivity extends AppCompatActivity {
     private PlayerAdapter playerAdapter;
     private final List<Hero> heroes = new ArrayList<>();
     private int salaId, userId;
+    private int heroesRetries = 0;
+    private static final int MAX_HEROES_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +38,6 @@ public class MasterDashboardActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_master_dashboard);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         salaId = getIntent().getIntExtra("salaId", -1);
         userId = getIntent().getIntExtra("userId", -1);
@@ -47,7 +48,7 @@ public class MasterDashboardActivity extends AppCompatActivity {
         TextView roomNameTitle = findViewById(R.id.room_name_title);
         TextView roomCodeLabel = findViewById(R.id.room_code_label);
         if (salaNombre != null) roomNameTitle.setText("Sala: " + salaNombre);
-        if (salaCodigo != null) roomCodeLabel.setText("CÃ³digo: " + salaCodigo);
+        if (salaCodigo != null) roomCodeLabel.setText("Código: " + salaCodigo);
 
         RecyclerView playersRecycler = findViewById(R.id.players_recycler);
         Button manageItemsButton = findViewById(R.id.manage_items_button);
@@ -66,6 +67,8 @@ public class MasterDashboardActivity extends AppCompatActivity {
             intent.putExtra("dex",       hero.getDex());
             intent.putExtra("defence",   hero.getDefence());
             intent.putExtra("mana",      hero.getMana());
+            intent.putExtra("level",     hero.getLevel());
+            intent.putExtra("xp",        hero.getXp());
             intent.putExtra("userId",    userId);
             intent.putExtra("salaId",    salaId);
             intent.putExtra("is_master", true);
@@ -120,6 +123,7 @@ public class MasterDashboardActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    heroesRetries = 0;
                     heroes.clear();
                     for (Map<String, Object> m : response.body()) {
                         Hero h = new Hero(
@@ -134,6 +138,8 @@ public class MasterDashboardActivity extends AppCompatActivity {
                                 ((Number)m.get("mana")).intValue()
                         );
                         h.setId(((Number)m.get("id")).intValue());
+                        if (m.get("level") != null) h.setLevel(((Number)m.get("level")).intValue());
+                        if (m.get("xp") != null) h.setXp(((Number)m.get("xp")).intValue());
                         heroes.add(h);
                     }
                     playerAdapter.notifyDataSetChanged();
@@ -142,7 +148,13 @@ public class MasterDashboardActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MasterDashboardActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                if (heroesRetries < MAX_HEROES_RETRIES) {
+                    heroesRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(MasterDashboardActivity.this::cargarHeroes, 800);
+                } else {
+                    Toast.makeText(MasterDashboardActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }

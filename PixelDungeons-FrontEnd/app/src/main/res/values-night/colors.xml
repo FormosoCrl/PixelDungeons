@@ -1,4 +1,7 @@
 <resources>
+    <!-- Color del nivel / barra de XP (más claro para fondo oscuro) -->
+    <color name="level_purple">#C9B0FF</color>
+
     <color name="md_theme_primary">#E3C46C</color>
     <color name="md_theme_onPrimary">#3D2F00</color>
     <color name="md_theme_primaryContainer">#584400</color>

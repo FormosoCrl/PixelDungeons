@@ -27,7 +27,6 @@ public class CreateRoomActivity extends AppCompatActivity {
         ThemeHelper.apply(this);
         setContentView(R.layout.activity_create_room);
         ThemeHelper.setup(this, findViewById(R.id.theme_switch));
-        ThemeHelper.adjustMarginForStatusBar(findViewById(R.id.theme_toggle));
 
         int userId = getIntent().getIntExtra("userId", -1);
         String username = getIntent().getStringExtra("username");
@@ -55,7 +54,7 @@ public class CreateRoomActivity extends AppCompatActivity {
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     if (response.isSuccessful() && response.body() != null) {
                         int salaId = ((Double) response.body().get("id")).intValue();
-                        Toast.makeText(CreateRoomActivity.this, "CÃ³digo de sala: " + codigo, Toast.LENGTH_LONG).show();
+                        Toast.makeText(CreateRoomActivity.this, "Código de sala: " + codigo, Toast.LENGTH_LONG).show();
                         Intent intent = new Intent(CreateRoomActivity.this, MasterDashboardActivity.class);
                         intent.putExtra("salaId", salaId);
                         intent.putExtra("salaNombre", nombre);
@@ -71,7 +70,7 @@ public class CreateRoomActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(CreateRoomActivity.this, "Error de conexiÃ³n", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CreateRoomActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
                 }
             });
         });

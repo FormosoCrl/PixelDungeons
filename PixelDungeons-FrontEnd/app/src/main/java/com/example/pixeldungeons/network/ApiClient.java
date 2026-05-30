@@ -2,7 +2,6 @@ package com.example.pixeldungeons.network;
 
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -24,6 +23,14 @@ public class ApiClient {
                     .connectTimeout(15, TimeUnit.SECONDS)
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(30, TimeUnit.SECONDS)
+                    // gunicorn cierra las conexiones keep-alive a los ~2s. Forzamos
+                    // "Connection: close" para no reutilizar conexiones ya muertas,
+                    // que provocaban "unexpected end of stream" en la primera
+                    // petición tras el login (lista de salas vacía hasta recrear).
+                    .addInterceptor(chain -> chain.proceed(
+                            chain.request().newBuilder()
+                                    .header("Connection", "close")
+                                    .build()))
                     .build();
 
             Retrofit retrofit = new Retrofit.Builder()

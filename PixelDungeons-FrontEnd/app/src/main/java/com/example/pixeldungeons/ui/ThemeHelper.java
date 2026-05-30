@@ -2,14 +2,10 @@ package com.example.pixeldungeons.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.view.View;
-import android.view.ViewGroup;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SwitchCompat;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class ThemeHelper {
 
@@ -43,27 +39,6 @@ public class ThemeHelper {
                             : AppCompatDelegate.MODE_NIGHT_NO);
             activity.recreate();
         });
-    }
-
-    /**
-     * Ajusta el margen superior del toggle para que quede justo debajo de la
-     * barra de estado en dispositivos edge-to-edge (Samsung, Android 15+).
-     * Llámalo en onCreate() después de setContentView, pasando la vista raíz
-     * del include (R.id.theme_toggle).
-     */
-    public static void adjustMarginForStatusBar(View toggleView) {
-        ViewCompat.setOnApplyWindowInsetsListener(toggleView, (v, insets) -> {
-            int statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top;
-            ViewGroup.MarginLayoutParams params =
-                    (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-            params.topMargin = statusBarHeight + dpToPx(v.getContext(), 4);
-            v.setLayoutParams(params);
-            return insets;
-        });
-    }
-
-    private static int dpToPx(Context ctx, int dp) {
-        return Math.round(dp * ctx.getResources().getDisplayMetrics().density);
     }
 
     private static SharedPreferences prefs(Context ctx) {

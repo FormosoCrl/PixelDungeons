@@ -12,6 +12,8 @@ public class Hero {
     private int dex;
     private int defence;
     private int mana;
+    private int level = 1;
+    private int xp = 0;
 
     public Hero(String name, String race, String heroClass,
                 int hp, int maxHp, int str, int dex, int defence, int mana) {
@@ -37,4 +39,8 @@ public class Hero {
     public int getDex() { return dex; }
     public int getDefence() { return defence; }
     public int getMana() { return mana; }
+    public int getLevel() { return level; }
+    public void setLevel(int level) { this.level = level; }
+    public int getXp() { return xp; }
+    public void setXp(int xp) { this.xp = xp; }
 }

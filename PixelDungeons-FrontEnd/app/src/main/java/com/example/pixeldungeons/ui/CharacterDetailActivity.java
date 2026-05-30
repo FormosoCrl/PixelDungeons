@@ -7,16 +7,22 @@ import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.pixeldungeons.R;
+import com.example.pixeldungeons.model.StatItem;
 import com.example.pixeldungeons.network.ApiClient;
+import com.example.pixeldungeons.ui.adapter.StatAdapter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -25,13 +31,16 @@ import retrofit2.Response;
 
 public class CharacterDetailActivity extends AppCompatActivity {
 
-    private TextView hpText, strText, dexText, defText, manaText;
+    private TextView hpText;
     private int maxHp;
+    private StatAdapter statAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_character_detail);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         Intent received = getIntent();
         boolean isMaster = received.getBooleanExtra("is_master", false);
@@ -40,13 +49,10 @@ public class CharacterDetailActivity extends AppCompatActivity {
         int salaId = received.getIntExtra("salaId", -1);
 
         TextView nameText = findViewById(R.id.detail_char_name);
-        hpText   = findViewById(R.id.hp_value);
-        strText  = findViewById(R.id.str_value);
-        dexText  = findViewById(R.id.dex_value);
-        defText  = findViewById(R.id.defence_value);
-        manaText = findViewById(R.id.mana_value);
-        Button mapButton       = findViewById(R.id.map_button);
-        Button inventoryButton = findViewById(R.id.inventory_button);
+        hpText = findViewById(R.id.hp_value);
+        Button saveButton      = findViewById(R.id.save_button);
+        Button navMap          = findViewById(R.id.nav_map);
+        Button navInventory    = findViewById(R.id.nav_inventory);
 
         String name = received.getStringExtra("name");
         int hp      = received.getIntExtra("hp", 20);
@@ -55,64 +61,81 @@ public class CharacterDetailActivity extends AppCompatActivity {
         int dex     = received.getIntExtra("dex", 0);
         int defence = received.getIntExtra("defence", 0);
         int mana    = received.getIntExtra("mana", 0);
+        int level   = received.getIntExtra("level", 1);
+        int xp      = received.getIntExtra("xp", 0);
+        int xpNeeded = xpToNext(level);
 
         if (name != null) nameText.setText(name);
-        hpText.setText(hp + " / " + maxHp);
-        strText.setText(String.valueOf(str));
-        dexText.setText(String.valueOf(dex));
-        defText.setText(String.valueOf(defence));
-        manaText.setText(String.valueOf(mana));
+
+        TextView levelLabel = findViewById(R.id.level_label);
+        ProgressBar xpBar   = findViewById(R.id.xp_bar);
+        TextView xpText     = findViewById(R.id.xp_text);
+        xpBar.setMax(xpNeeded);
+        xpBar.setProgress(Math.min(xp, xpNeeded));
+
+        List<StatItem> statList = new ArrayList<>();
+        statList.add(new StatItem("Fuerza (STR)", str));
+        statList.add(new StatItem("Destreza (DEX)", dex));
+        statList.add(new StatItem("Defensa (DEF)", defence));
+        statList.add(new StatItem("Mana", mana));
+
+        statAdapter = new StatAdapter(statList, isMaster);
+        RecyclerView statsRecycler = findViewById(R.id.stats_recycler);
+        statsRecycler.setLayoutManager(new GridLayoutManager(this, 2));
+        statsRecycler.setAdapter(statAdapter);
+
+        navMap.setOnClickListener(v -> {
+            startActivity(new Intent(this, MapActivity.class).putExtras(received));
+            finish();
+        });
+        navInventory.setOnClickListener(v -> {
+            startActivity(new Intent(this, InventoryActivity.class).putExtras(received));
+            finish();
+        });
 
         if (isMaster) {
-            ConstraintLayout content = findViewById(R.id.detail_content);
+            levelLabel.setText(String.valueOf(level));
+            replaceWithEditText(levelLabel, InputType.TYPE_CLASS_NUMBER);
             hpText.setText(String.valueOf(hp));
-            replaceWithEditText(hpText,   content, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(strText,  content, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(dexText,  content, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(defText,  content, InputType.TYPE_CLASS_NUMBER);
-            replaceWithEditText(manaText, content, InputType.TYPE_CLASS_NUMBER);
-
-            inventoryButton.setText("Guardar");
-            inventoryButton.setOnClickListener(v -> guardarCambios(heroId));
-
-            mapButton.setOnClickListener(v -> {
-                Intent intent = new Intent(this, MapActivity.class);
-                intent.putExtras(received);
-                startActivity(intent);
-                finish();
-            });
+            replaceWithEditText(hpText, InputType.TYPE_CLASS_NUMBER);
+            xpText.setText(String.valueOf(xp));
+            replaceWithEditText(xpText, InputType.TYPE_CLASS_NUMBER);
+            saveButton.setVisibility(android.view.View.VISIBLE);
+            saveButton.setOnClickListener(v -> guardarCambios(heroId));
         } else {
-            mapButton.setOnClickListener(v -> {
-                Intent intent = new Intent(this, MapActivity.class);
-                intent.putExtras(received);
-                startActivity(intent);
-                finish();
-            });
-
-            inventoryButton.setOnClickListener(v -> {
-                Intent intent = new Intent(this, InventoryActivity.class);
-                intent.putExtras(received);
-                startActivity(intent);
-                finish();
-            });
+            levelLabel.setText("Lv." + level);
+            hpText.setText(hp + " / " + maxHp);
+            xpText.setText(xp + " / " + xpNeeded);
         }
     }
 
-    private void guardarCambios(int heroId) {
-        EditText hpEdit   = findViewById(R.id.hp_value);
-        EditText strEdit  = findViewById(R.id.str_value);
-        EditText dexEdit  = findViewById(R.id.dex_value);
-        EditText defEdit  = findViewById(R.id.defence_value);
-        EditText manaEdit = findViewById(R.id.mana_value);
+    /** XP necesaria para pasar de 'level' al siguiente. Misma curva que el backend. */
+    private int xpToNext(int level) {
+        return 50 * level * (level + 1);
+    }
 
+    private void guardarCambios(int heroId) {
+        EditText hpEdit = findViewById(R.id.hp_value);
+        EditText xpEdit = findViewById(R.id.xp_text);
+        EditText levelEdit = findViewById(R.id.level_label);
         try {
+            int hp    = Math.max(0, Math.min(Integer.parseInt(hpEdit.getText().toString().trim()), maxHp));
+            int xp    = Math.max(0, Integer.parseInt(xpEdit.getText().toString().trim()));
+            int level = Math.max(1, Integer.parseInt(levelEdit.getText().toString().trim()));
+            int str = Math.max(0, Math.min(statAdapter.getValue(0), 999));
+            int dex = Math.max(0, Math.min(statAdapter.getValue(1), 999));
+            int def = Math.max(0, Math.min(statAdapter.getValue(2), 999));
+            int man = Math.max(0, Math.min(statAdapter.getValue(3), 999));
+
             Map<String, Object> body = new HashMap<>();
-            body.put("hp",       Integer.parseInt(hpEdit.getText().toString().trim()));
+            body.put("hp",       hp);
             body.put("max_hp",   maxHp);
-            body.put("strength", Integer.parseInt(strEdit.getText().toString().trim()));
-            body.put("dex",      Integer.parseInt(dexEdit.getText().toString().trim()));
-            body.put("defence",  Integer.parseInt(defEdit.getText().toString().trim()));
-            body.put("mana",     Integer.parseInt(manaEdit.getText().toString().trim()));
+            body.put("strength", str);
+            body.put("dex",      dex);
+            body.put("defence",  def);
+            body.put("mana",     man);
+            body.put("level",    level);
+            body.put("xp",       xp);
 
             ApiClient.getService().actualizarHero(heroId, body).enqueue(new Callback<Map<String, Object>>() {
                 @Override
@@ -135,7 +158,8 @@ public class CharacterDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void replaceWithEditText(TextView source, ConstraintLayout parent, int inputType) {
+    private void replaceWithEditText(TextView source, int inputType) {
+        ViewGroup parent = (ViewGroup) source.getParent();
         int index = parent.indexOfChild(source);
         ViewGroup.LayoutParams params = source.getLayoutParams();
 
@@ -145,9 +169,11 @@ public class CharacterDetailActivity extends AppCompatActivity {
         edit.setTextColor(source.getCurrentTextColor());
         edit.setTextSize(TypedValue.COMPLEX_UNIT_PX, source.getTextSize());
         edit.setInputType(inputType);
+        edit.setGravity(android.view.Gravity.CENTER);
         edit.setLayoutParams(params);
 
         parent.removeView(source);
         parent.addView(edit, index);
     }
 }
+

@@ -49,6 +49,7 @@ public class RegisterActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         int userId = ((Double) response.body().get("id")).intValue();
                         String user = (String) response.body().get("username");
+                        SessionManager.save(RegisterActivity.this, userId, user);
                         Toast.makeText(RegisterActivity.this, "Cuenta creada", Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(RegisterActivity.this, LobbyActivity.class);
                         intent.putExtra("userId", userId);

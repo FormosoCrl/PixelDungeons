@@ -71,6 +71,9 @@ public interface ApiService {
     @GET("api/salas/{sala_id}/mapas/")
     Call<List<Map<String, Object>>> getMapas(@Path("sala_id") int salaId);
 
+    @GET("api/mapas/{mapa_id}/")
+    Call<Map<String, Object>> getMapaDetalle(@Path("mapa_id") int mapaId);
+
     @POST("api/salas/{sala_id}/mapas/")
     Call<Map<String, Object>> crearMapa(@Path("sala_id") int salaId, @Body Map<String, Object> body);
 

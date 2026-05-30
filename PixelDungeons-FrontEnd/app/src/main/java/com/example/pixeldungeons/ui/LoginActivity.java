@@ -23,6 +23,18 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
+
+        // Si ya hay sesión guardada, ir directo al lobby sin mostrar el login.
+        if (SessionManager.isLoggedIn(this)) {
+            Intent intent = new Intent(this, LobbyActivity.class);
+            intent.putExtra("userId", SessionManager.getUserId(this));
+            intent.putExtra("username", SessionManager.getUsername(this));
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         EditText usernameInput = findViewById(R.id.email_input);
@@ -49,6 +61,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         int userId = ((Double) response.body().get("id")).intValue();
                         String user = (String) response.body().get("username");
+                        SessionManager.save(LoginActivity.this, userId, user);
                         Intent intent = new Intent(LoginActivity.this, LobbyActivity.class);
                         intent.putExtra("userId", userId);
                         intent.putExtra("username", user);

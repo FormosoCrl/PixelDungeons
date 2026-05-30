@@ -1,6 +1,6 @@
 package com.example.pixeldungeons.ui;
 
-import android.app.AlertDialog;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
@@ -29,11 +29,15 @@ public class MasterDashboardActivity extends AppCompatActivity {
     private PlayerAdapter playerAdapter;
     private final List<Hero> heroes = new ArrayList<>();
     private int salaId, userId;
+    private int heroesRetries = 0;
+    private static final int MAX_HEROES_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_master_dashboard);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         salaId = getIntent().getIntExtra("salaId", -1);
         userId = getIntent().getIntExtra("userId", -1);
@@ -52,31 +56,23 @@ public class MasterDashboardActivity extends AppCompatActivity {
         Button closeRoomButton   = findViewById(R.id.close_room_button);
 
         playerAdapter = new PlayerAdapter(heroes, hero -> {
-            new AlertDialog.Builder(this)
-                    .setTitle(hero.getName())
-                    .setItems(new String[]{"Editar estadísticas", "Ver inventario"}, (dialog, which) -> {
-                        Intent intent;
-                        if (which == 0) {
-                            intent = new Intent(this, CharacterDetailActivity.class);
-                        } else {
-                            intent = new Intent(this, InventoryActivity.class);
-                        }
-                        intent.putExtra("heroId",    hero.getId());
-                        intent.putExtra("name",      hero.getName());
-                        intent.putExtra("race",      hero.getRace());
-                        intent.putExtra("heroClass", hero.getHeroClass());
-                        intent.putExtra("hp",        hero.getHp());
-                        intent.putExtra("maxHp",     hero.getMaxHp());
-                        intent.putExtra("str",       hero.getStr());
-                        intent.putExtra("dex",       hero.getDex());
-                        intent.putExtra("defence",   hero.getDefence());
-                        intent.putExtra("mana",      hero.getMana());
-                        intent.putExtra("userId",    userId);
-                        intent.putExtra("salaId",    salaId);
-                        intent.putExtra("is_master", true);
-                        startActivity(intent);
-                    })
-                    .show();
+            Intent intent = new Intent(this, CharacterDetailActivity.class);
+            intent.putExtra("heroId",    hero.getId());
+            intent.putExtra("name",      hero.getName());
+            intent.putExtra("race",      hero.getRace());
+            intent.putExtra("heroClass", hero.getHeroClass());
+            intent.putExtra("hp",        hero.getHp());
+            intent.putExtra("maxHp",     hero.getMaxHp());
+            intent.putExtra("str",       hero.getStr());
+            intent.putExtra("dex",       hero.getDex());
+            intent.putExtra("defence",   hero.getDefence());
+            intent.putExtra("mana",      hero.getMana());
+            intent.putExtra("level",     hero.getLevel());
+            intent.putExtra("xp",        hero.getXp());
+            intent.putExtra("userId",    userId);
+            intent.putExtra("salaId",    salaId);
+            intent.putExtra("is_master", true);
+            startActivity(intent);
         });
 
         playersRecycler.setLayoutManager(new LinearLayoutManager(this));
@@ -127,20 +123,23 @@ public class MasterDashboardActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    heroesRetries = 0;
                     heroes.clear();
                     for (Map<String, Object> m : response.body()) {
                         Hero h = new Hero(
                                 (String) m.get("name"),
                                 (String) m.get("race"),
                                 (String) m.get("hero_class"),
-                                ((Double) m.get("hp")).intValue(),
-                                ((Double) m.get("max_hp")).intValue(),
-                                ((Double) m.get("strength")).intValue(),
-                                ((Double) m.get("dex")).intValue(),
-                                ((Double) m.get("defence")).intValue(),
-                                ((Double) m.get("mana")).intValue()
+                                ((Number)m.get("hp")).intValue(),
+                                ((Number)m.get("max_hp")).intValue(),
+                                ((Number)m.get("strength")).intValue(),
+                                ((Number)m.get("dex")).intValue(),
+                                ((Number)m.get("defence")).intValue(),
+                                ((Number)m.get("mana")).intValue()
                         );
-                        h.setId(((Double) m.get("id")).intValue());
+                        h.setId(((Number)m.get("id")).intValue());
+                        if (m.get("level") != null) h.setLevel(((Number)m.get("level")).intValue());
+                        if (m.get("xp") != null) h.setXp(((Number)m.get("xp")).intValue());
                         heroes.add(h);
                     }
                     playerAdapter.notifyDataSetChanged();
@@ -149,8 +148,15 @@ public class MasterDashboardActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MasterDashboardActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                if (heroesRetries < MAX_HEROES_RETRIES) {
+                    heroesRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(MasterDashboardActivity.this::cargarHeroes, 800);
+                } else {
+                    Toast.makeText(MasterDashboardActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 }
+

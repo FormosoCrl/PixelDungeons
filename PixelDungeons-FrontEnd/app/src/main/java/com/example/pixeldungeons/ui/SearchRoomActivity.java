@@ -22,7 +22,9 @@ public class SearchRoomActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_search_room);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         int userId = getIntent().getIntExtra("userId", -1);
         String username = getIntent().getStringExtra("username");
@@ -42,7 +44,7 @@ public class SearchRoomActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                     if (response.isSuccessful() && response.body() != null) {
-                        int salaId = ((Double) response.body().get("id")).intValue();
+                        int salaId = ((Number) response.body().get("id")).intValue();
                         String nombre = (String) response.body().get("nombre");
                         Intent intent = new Intent(SearchRoomActivity.this, CharacterListActivity.class);
                         intent.putExtra("salaId", salaId);
@@ -63,3 +65,4 @@ public class SearchRoomActivity extends AppCompatActivity {
         });
     }
 }
+

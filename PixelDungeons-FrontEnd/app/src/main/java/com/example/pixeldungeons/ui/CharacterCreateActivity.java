@@ -21,13 +21,35 @@ import retrofit2.Response;
 
 public class CharacterCreateActivity extends AppCompatActivity {
 
+    // Valores canónicos que se envían al backend (deben coincidir con las
+    // tablas de crecimiento del servidor). No tocar el texto.
     private static final String[] RACES = {"Humano", "Elfo", "Enano", "Orco", "Mediano"};
     private static final String[] CLASSES = {"Guerrero", "Arquero", "Mago", "Berserker", "Pícaro", "Clérigo"};
+
+    // Texto que se muestra en el spinner: indica los bonus de stats por nivel.
+    // Las razas suman a esos stats; las clases marcan su mejor (↑) y peor (↓) atributo.
+    private static final String[] RACES_DISPLAY = {
+            "Humano (+todo)",
+            "Elfo (+DEX/+MANA)",
+            "Enano (+HP/+DEF)",
+            "Orco (+STR/+HP)",
+            "Mediano (+DEX/+DEF)"
+    };
+    private static final String[] CLASSES_DISPLAY = {
+            "Guerrero (↑STR ↓MANA)",
+            "Arquero (↑DEX ↓MANA)",
+            "Mago (↑MANA ↓STR)",
+            "Berserker (↑STR ↓DEF)",
+            "Pícaro (↑DEX ↓DEF)",
+            "Clérigo (↑MANA ↓STR)"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_character_create);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         int userId = getIntent().getIntExtra("userId", -1);
         int salaId = getIntent().getIntExtra("salaId", -1);
@@ -37,8 +59,8 @@ public class CharacterCreateActivity extends AppCompatActivity {
         Spinner classSpinner = findViewById(R.id.class_spiner);
         Button createButton = findViewById(R.id.create_character_button);
 
-        raceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, RACES));
-        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CLASSES));
+        raceSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, RACES_DISPLAY));
+        classSpinner.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, CLASSES_DISPLAY));
 
         createButton.setOnClickListener(v -> {
             String name = nameInput.getText().toString().trim();
@@ -47,12 +69,14 @@ public class CharacterCreateActivity extends AppCompatActivity {
                 return;
             }
 
-            String heroClass = (String) classSpinner.getSelectedItem();
+            // El spinner muestra el texto con bonus, pero enviamos el valor canónico.
+            String race = RACES[raceSpinner.getSelectedItemPosition()];
+            String heroClass = CLASSES[classSpinner.getSelectedItemPosition()];
             int[] stats = generateStatsForClass(heroClass);
 
             Map<String, Object> body = new HashMap<>();
             body.put("name", name);
-            body.put("race", raceSpinner.getSelectedItem());
+            body.put("race", race);
             body.put("hero_class", heroClass);
             body.put("hp", stats[0]);
             body.put("max_hp", stats[0]);

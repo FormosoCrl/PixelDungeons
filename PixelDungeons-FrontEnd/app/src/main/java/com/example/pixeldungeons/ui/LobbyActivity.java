@@ -2,8 +2,8 @@ package com.example.pixeldungeons.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,11 +29,15 @@ public class LobbyActivity extends AppCompatActivity {
     private final List<Map<String, Object>> misSalas = new ArrayList<>();
     private TextView misSlasLabel;
     private RecyclerView salasRecycler;
+    private int salasRetries = 0;
+    private static final int MAX_SALAS_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_lobby);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         userId   = getIntent().getIntExtra("userId", -1);
         username = getIntent().getStringExtra("username");
@@ -42,7 +46,7 @@ public class LobbyActivity extends AppCompatActivity {
         salasRecycler = findViewById(R.id.salas_recycler);
 
         salaAdapter = new SalaAdapter(misSalas, sala -> {
-            int salaId    = ((Double) sala.get("id")).intValue();
+            int salaId    = ((Number) sala.get("id")).intValue();
             String nombre = (String) sala.get("nombre");
             String codigo = (String) sala.get("codigo");
             Intent intent = new Intent(this, MasterDashboardActivity.class);
@@ -70,6 +74,14 @@ public class LobbyActivity extends AppCompatActivity {
             intent.putExtra("username", username);
             startActivity(intent);
         });
+
+        findViewById(R.id.logout_button).setOnClickListener(v -> {
+            SessionManager.clear(this);
+            Intent intent = new Intent(this, LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
     }
 
     @Override
@@ -84,25 +96,28 @@ public class LobbyActivity extends AppCompatActivity {
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (!response.isSuccessful() || response.body() == null) return;
 
+                salasRetries = 0;
                 misSalas.clear();
                 for (Map<String, Object> s : response.body()) {
                     Object masterId = s.get("master_id");
-                    if (masterId != null && ((Double) masterId).intValue() == userId) {
+                    if (masterId != null && ((Number) masterId).intValue() == userId) {
                         misSalas.add(s);
                     }
                 }
                 salaAdapter.notifyDataSetChanged();
-
-                boolean haySalas = !misSalas.isEmpty();
-                misSlasLabel.setVisibility(haySalas ? View.VISIBLE : View.GONE);
-                salasRecycler.setVisibility(haySalas ? View.VISIBLE : View.GONE);
             }
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                misSlasLabel.setVisibility(View.GONE);
-                salasRecycler.setVisibility(View.GONE);
+                if (salasRetries < MAX_SALAS_RETRIES) {
+                    salasRetries++;
+                    salasRecycler.postDelayed(LobbyActivity.this::cargarMisSalas, 800);
+                } else {
+                    Toast.makeText(LobbyActivity.this,
+                            "No se pudieron cargar las salas", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 }
+

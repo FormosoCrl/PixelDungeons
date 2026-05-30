@@ -39,13 +39,17 @@ public class MapManagerActivity extends AppCompatActivity {
     private MapAdapter mapAdapter;
     private final List<GameMap> maps = new ArrayList<>();
     private int salaId;
+    private int mapsRetries = 0;
+    private static final int MAX_MAPS_RETRIES = 3;
     private String pendingImageBase64 = "";
     private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_map_manager);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         salaId = getIntent().getIntExtra("salaId", -1);
 
@@ -64,19 +68,25 @@ public class MapManagerActivity extends AppCompatActivity {
 
         mapAdapter = new MapAdapter(maps, position -> {
             GameMap map = maps.get(position);
-            Map<String, Object> body = new HashMap<>();
-            body.put("visible", !map.isVisible());
-            ApiClient.getService().actualizarMapa(map.getId(), body).enqueue(new Callback<Map<String, Object>>() {
-                @Override
-                public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
-                    if (response.isSuccessful()) cargarMapas();
-                }
+            boolean mostrarEste = !map.isVisible();
 
-                @Override
-                public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                    Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            if (!mostrarEste) {
+                activarMapa(map.getId(), false);
+                return;
+            }
+
+            List<GameMap> aOcultar = new ArrayList<>();
+            for (GameMap otro : maps) {
+                if (otro.isVisible() && otro.getId() != map.getId()) {
+                    aOcultar.add(otro);
                 }
-            });
+            }
+
+            if (aOcultar.isEmpty()) {
+                activarMapa(map.getId(), true);
+            } else {
+                ocultarSecuencialYActivar(aOcultar, 0, map.getId());
+            }
         });
 
         mapsRecycler.setLayoutManager(new GridLayoutManager(this, 2));
@@ -91,16 +101,51 @@ public class MapManagerActivity extends AppCompatActivity {
         cargarMapas();
     }
 
+    private void ocultarSecuencialYActivar(List<GameMap> aOcultar, int index, int idFinal) {
+        if (index >= aOcultar.size()) {
+            activarMapa(idFinal, true);
+            return;
+        }
+        Map<String, Object> body = new HashMap<>();
+        body.put("visible", false);
+        ApiClient.getService().actualizarMapa(aOcultar.get(index).getId(), body).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                ocultarSecuencialYActivar(aOcultar, index + 1, idFinal);
+            }
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                ocultarSecuencialYActivar(aOcultar, index + 1, idFinal);
+            }
+        });
+    }
+
+    private void activarMapa(int mapaId, boolean visible) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("visible", visible);
+        ApiClient.getService().actualizarMapa(mapaId, body).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (response.isSuccessful()) cargarMapas();
+            }
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
     private void cargarMapas() {
         ApiClient.getService().getMapas(salaId).enqueue(new Callback<List<Map<String, Object>>>() {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    mapsRetries = 0;
                     maps.clear();
                     for (Map<String, Object> m : response.body()) {
                         String img = m.get("image") != null ? (String) m.get("image") : "";
                         GameMap map = new GameMap((String) m.get("name"), (Boolean) m.get("visible"), img);
-                        map.setId(((Double) m.get("id")).intValue());
+                        map.setId(((Number) m.get("id")).intValue());
                         maps.add(map);
                     }
                     mapAdapter.notifyDataSetChanged();
@@ -109,7 +154,13 @@ public class MapManagerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                if (mapsRetries < MAX_MAPS_RETRIES) {
+                    mapsRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(MapManagerActivity.this::cargarMapas, 800);
+                } else {
+                    Toast.makeText(MapManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -178,12 +229,14 @@ public class MapManagerActivity extends AppCompatActivity {
             if (is == null) return "";
             Bitmap bitmap = BitmapFactory.decodeStream(is);
             if (bitmap == null) return "";
-            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 600, 600, true);
+            // Máximo 400x400 al 50% de calidad → ~10KB base64 por mapa
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 400, 400, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            scaled.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+            scaled.compress(Bitmap.CompressFormat.JPEG, 50, baos);
             return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
         } catch (Exception e) {
             return "";
         }
     }
 }
+

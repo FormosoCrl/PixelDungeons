@@ -39,11 +39,15 @@ public class ItemManagerActivity extends AppCompatActivity {
     private ItemAdapter itemAdapter;
     private final List<Item> items = new ArrayList<>();
     private int salaId;
+    private int itemsRetries = 0;
+    private static final int MAX_ITEMS_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_item_manager);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         salaId = getIntent().getIntExtra("salaId", -1);
 
@@ -85,6 +89,7 @@ public class ItemManagerActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    itemsRetries = 0;
                     items.clear();
                     for (Map<String, Object> m : response.body()) {
                         Item item = new Item(
@@ -94,9 +99,9 @@ public class ItemManagerActivity extends AppCompatActivity {
                                 (Boolean) m.get("consumable"),
                                 (String) m.get("description"),
                                 (String) m.get("bonus_stat"),
-                                ((Double) m.get("bonus_value")).intValue()
+                                ((Number)m.get("bonus_value")).intValue()
                         );
-                        item.setId(((Double) m.get("id")).intValue());
+                        item.setId(((Number)m.get("id")).intValue());
                         items.add(item);
                     }
                     itemAdapter.notifyDataSetChanged();
@@ -105,7 +110,13 @@ public class ItemManagerActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                if (itemsRetries < MAX_ITEMS_RETRIES) {
+                    itemsRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(ItemManagerActivity.this::cargarItems, 800);
+                } else {
+                    Toast.makeText(ItemManagerActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -186,3 +197,4 @@ public class ItemManagerActivity extends AppCompatActivity {
                 .show();
     }
 }
+

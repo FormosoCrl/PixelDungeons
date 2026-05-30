@@ -37,11 +37,15 @@ public class InventoryActivity extends AppCompatActivity {
     private int heroId, userId, salaId;
     private boolean isMaster;
     private Intent received;
+    private int invRetries = 0;
+    private static final int MAX_INV_RETRIES = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_inventory);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         received = getIntent();
         isMaster = received.getBooleanExtra("is_master", false);
@@ -51,8 +55,8 @@ public class InventoryActivity extends AppCompatActivity {
 
         emptyText         = findViewById(R.id.inventory_empty);
         inventoryRecycler = findViewById(R.id.inventory_recycler);
-        Button statsButton = findViewById(R.id.btn_stats_from_inv);
-        Button mapButton   = findViewById(R.id.btn_map_from_inv);
+        Button navStats = findViewById(R.id.nav_stats);
+        Button navMap   = findViewById(R.id.nav_map);
         FloatingActionButton fabAdd = findViewById(R.id.fab_add_item);
 
         itemAdapter = new ItemAdapter(inventory, isMaster, position -> {
@@ -74,12 +78,12 @@ public class InventoryActivity extends AppCompatActivity {
             fabAdd.setOnClickListener(v -> cargarCatalogoYMostrarDialog());
         }
 
-        statsButton.setOnClickListener(v -> {
+        navStats.setOnClickListener(v -> {
             startActivity(new Intent(this, CharacterDetailActivity.class).putExtras(received));
             finish();
         });
 
-        mapButton.setOnClickListener(v -> {
+        navMap.setOnClickListener(v -> {
             startActivity(new Intent(this, MapActivity.class).putExtras(received));
             finish();
         });
@@ -96,18 +100,19 @@ public class InventoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Map<String, Object>>> call, Response<List<Map<String, Object>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    invRetries = 0;
                     inventory.clear();
                     for (Map<String, Object> m : response.body()) {
                         Item item = new Item(
                                 (String) m.get("name"),
                                 (String) m.get("item_type"),
-                                ((Double) m.get("quantity")).intValue(),
+                                ((Number)m.get("quantity")).intValue(),
                                 (Boolean) m.get("consumable"),
                                 (String) m.get("description"),
                                 (String) m.get("bonus_stat"),
-                                ((Double) m.get("bonus_value")).intValue()
+                                ((Number)m.get("bonus_value")).intValue()
                         );
-                        item.setId(((Double) m.get("item_id")).intValue());
+                        item.setId(((Number)m.get("item_id")).intValue());
                         item.setEquipped((Boolean) m.get("equipped"));
                         inventory.add(item);
                     }
@@ -118,7 +123,13 @@ public class InventoryActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<Map<String, Object>>> call, Throwable t) {
-                Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                if (invRetries < MAX_INV_RETRIES) {
+                    invRetries++;
+                    new android.os.Handler(android.os.Looper.getMainLooper())
+                            .postDelayed(InventoryActivity.this::cargarInventario, 800);
+                } else {
+                    Toast.makeText(InventoryActivity.this, "Error de conexión", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -131,7 +142,7 @@ public class InventoryActivity extends AppCompatActivity {
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful()) {
                     cargarInventario();
-                    String msg = item.isEquipped() ? "Desequipado: " : "Equipado: ";
+                    String msg = item.isEquipped() ? "Equipado: " : "Desequipado: ";
                     Toast.makeText(InventoryActivity.this, msg + item.getName(), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -148,8 +159,8 @@ public class InventoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (!response.isSuccessful() || response.body() == null) return;
-                int currentHp = ((Double) response.body().get("hp")).intValue();
-                int maxHp     = ((Double) response.body().get("max_hp")).intValue();
+                int currentHp = ((Number)response.body().get("hp")).intValue();
+                int maxHp     = ((Number)response.body().get("max_hp")).intValue();
 
                 aplicarEfectoYConsumir(item, currentHp, maxHp);
             }
@@ -253,9 +264,9 @@ public class InventoryActivity extends AppCompatActivity {
                                 (Boolean) m.get("consumable"),
                                 (String) m.get("description"),
                                 (String) m.get("bonus_stat"),
-                                ((Double) m.get("bonus_value")).intValue()
+                                ((Number)m.get("bonus_value")).intValue()
                         );
-                        item.setId(((Double) m.get("id")).intValue());
+                        item.setId(((Number)m.get("id")).intValue());
                         catalog.add(item);
                     }
                     mostrarDialogDarItem();
@@ -314,3 +325,4 @@ public class InventoryActivity extends AppCompatActivity {
         }
     }
 }
+

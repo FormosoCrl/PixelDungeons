@@ -9,6 +9,45 @@ def _body(request):
     return json.loads(request.body)
 
 
+def xp_to_next(level):
+    """XP necesaria para pasar de 'level' al siguiente. Curva: 50*n*(n+1)."""
+    return 50 * level * (level + 1)
+
+
+# Crecimiento de stats por nivel según la CLASE (peso principal).
+CLASS_GROWTH = {
+    'Guerrero':  {'max_hp': 8,  'strength': 3, 'dex': 1, 'defence': 2, 'mana': 0},
+    'Arquero':   {'max_hp': 5,  'strength': 2, 'dex': 3, 'defence': 1, 'mana': 1},
+    'Mago':      {'max_hp': 3,  'strength': 0, 'dex': 1, 'defence': 1, 'mana': 4},
+    'Berserker': {'max_hp': 10, 'strength': 4, 'dex': 1, 'defence': 0, 'mana': 0},
+    'Pícaro':    {'max_hp': 5,  'strength': 2, 'dex': 3, 'defence': 1, 'mana': 1},
+    'Clérigo':   {'max_hp': 6,  'strength': 1, 'dex': 1, 'defence': 2, 'mana': 3},
+}
+
+# Crecimiento de stats por nivel según la RAZA (modificador menor).
+RACE_GROWTH = {
+    'Humano':  {'max_hp': 2, 'strength': 1, 'dex': 1, 'defence': 1, 'mana': 1},
+    'Elfo':    {'max_hp': 0, 'strength': 0, 'dex': 2, 'defence': 0, 'mana': 2},
+    'Enano':   {'max_hp': 4, 'strength': 1, 'dex': 0, 'defence': 2, 'mana': 0},
+    'Orco':    {'max_hp': 3, 'strength': 2, 'dex': 0, 'defence': 1, 'mana': 0},
+    'Mediano': {'max_hp': 1, 'strength': 0, 'dex': 2, 'defence': 1, 'mana': 0},
+}
+
+
+def apply_level_up(h):
+    """Aplica el crecimiento de stats de UN nivel según clase + raza del héroe.
+    El HP máximo sube y el HP actual sube en la misma cantidad."""
+    cls = CLASS_GROWTH.get(h.hero_class, {})
+    rac = RACE_GROWTH.get(h.race, {})
+    hp_gain = cls.get('max_hp', 0) + rac.get('max_hp', 0)
+    h.max_hp += hp_gain
+    h.hp += hp_gain
+    h.strength += cls.get('strength', 0) + rac.get('strength', 0)
+    h.dex += cls.get('dex', 0) + rac.get('dex', 0)
+    h.defence += cls.get('defence', 0) + rac.get('defence', 0)
+    h.mana += cls.get('mana', 0) + rac.get('mana', 0)
+
+
 @csrf_exempt
 def registro(request):
     if request.method != 'POST':
@@ -108,7 +147,7 @@ def heroes_sala(request, sala_id):
         return JsonResponse({'error': 'Método no permitido'}, status=405)
     qs = list(Hero.objects.filter(sala_id=sala_id).values(
         'id', 'name', 'race', 'hero_class', 'hp', 'max_hp',
-        'strength', 'dex', 'defence', 'mana', 'owner_id'
+        'strength', 'dex', 'defence', 'mana', 'level', 'xp', 'owner_id'
     ))
     return JsonResponse(qs, safe=False)
 
@@ -122,15 +161,50 @@ def hero_detalle(request, hero_id):
     if request.method == 'GET':
         return JsonResponse({
             'id': h.id, 'name': h.name, 'hp': h.hp, 'max_hp': h.max_hp,
-            'strength': h.strength, 'dex': h.dex, 'defence': h.defence, 'mana': h.mana
+            'strength': h.strength, 'dex': h.dex, 'defence': h.defence, 'mana': h.mana,
+            'level': h.level, 'xp': h.xp
         })
     if request.method == 'PUT':
         data = _body(request)
-        for field in ('hp', 'max_hp', 'strength', 'dex', 'defence', 'mana'):
+        old_level = h.level
+        for field in ('hp', 'max_hp', 'strength', 'dex', 'defence', 'mana', 'level', 'xp'):
             if field in data:
                 setattr(h, field, data[field])
+        if 'level' in data and int(data['level']) != old_level:
+            # Cambio manual de nivel por el máster:
+            #  - Si SUBE de nivel, se aplica el crecimiento de stats
+            #    (clase + raza) por cada nivel ganado, igual que la subida
+            #    por XP. Así un nivel 19 puesto a mano tiene los stats de
+            #    un nivel 19 real.
+            #  - Si BAJA de nivel, los stats acumulados se mantienen
+            #    (no se puede revertir el crecimiento de forma fiable).
+            #  - La XP se reescala al mismo % de progreso del nuevo nivel.
+            new_level = max(1, int(data['level']))
+            if new_level > old_level:
+                h.level = old_level
+                for _ in range(new_level - old_level):
+                    h.level += 1
+                    apply_level_up(h)
+            else:
+                h.level = new_level
+            old_needed = xp_to_next(old_level)
+            pct = (h.xp / old_needed) if old_needed > 0 else 0
+            new_needed = xp_to_next(h.level)
+            h.xp = max(0, min(round(pct * new_needed), new_needed - 1))
+        else:
+            # Subida de nivel automática por XP: si la XP llega al umbral, sube
+            # de nivel, arrastra el sobrante y aplica el crecimiento de stats
+            # (clase + raza). Cada nivel exige más XP que el anterior.
+            while h.xp >= xp_to_next(h.level):
+                h.xp -= xp_to_next(h.level)
+                h.level += 1
+                apply_level_up(h)
         h.save()
-        return JsonResponse({'id': h.id, 'hp': h.hp, 'max_hp': h.max_hp})
+        return JsonResponse({
+            'id': h.id, 'hp': h.hp, 'max_hp': h.max_hp,
+            'strength': h.strength, 'dex': h.dex, 'defence': h.defence, 'mana': h.mana,
+            'level': h.level, 'xp': h.xp
+        })
     if request.method == 'DELETE':
         h.delete()
         return JsonResponse({'ok': True})
@@ -251,6 +325,8 @@ def mapa_detalle(request, mapa_id):
         m = GameMap.objects.get(id=mapa_id)
     except GameMap.DoesNotExist:
         return JsonResponse({'error': 'Mapa no encontrado'}, status=404)
+    if request.method == 'GET':
+        return JsonResponse({'id': m.id, 'name': m.name, 'visible': m.visible, 'image': m.image})
     if request.method == 'PUT':
         data = _body(request)
         if 'visible' in data:

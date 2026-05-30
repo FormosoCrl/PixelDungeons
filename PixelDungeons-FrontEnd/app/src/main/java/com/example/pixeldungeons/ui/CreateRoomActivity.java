@@ -24,7 +24,9 @@ public class CreateRoomActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ThemeHelper.apply(this);
         setContentView(R.layout.activity_create_room);
+        ThemeHelper.setup(this, findViewById(R.id.theme_switch));
 
         int userId = getIntent().getIntExtra("userId", -1);
         String username = getIntent().getStringExtra("username");
@@ -74,3 +76,4 @@ public class CreateRoomActivity extends AppCompatActivity {
         });
     }
 }
+

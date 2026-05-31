@@ -73,6 +73,12 @@ public class CharacterCreateActivity extends AppCompatActivity {
             String race = RACES[raceSpinner.getSelectedItemPosition()];
             String heroClass = CLASSES[classSpinner.getSelectedItemPosition()];
             int[] stats = generateStatsForClass(heroClass);
+            // Antes la raza solo influía al subir de nivel (RACE_GROWTH en el
+            // backend), así que un Orco y un Elfo recién creados eran iguales,
+            // contradiciendo el texto del spinner ("Humano +todo", "Elfo
+            // +DEX/+MANA"…). Sumamos un modificador base por raza para que
+            // se note desde el nivel 1.
+            applyRaceBase(stats, race);
 
             Map<String, Object> body = new HashMap<>();
             body.put("name", name);
@@ -115,6 +121,29 @@ public class CharacterCreateActivity extends AppCompatActivity {
             case "Pícaro":    return new int[]{20, 12, 22, 8,  4};
             case "Clérigo":   return new int[]{24, 12, 10, 12, 16};
             default:          return new int[]{20, 10, 10, 10, 0};
+        }
+    }
+
+    /**
+     * Suma el modificador base de la raza a los stats iniciales.
+     * Orden del array: [hp, str, dex, def, mana]. Refleja los bonus que
+     * anuncia el spinner (Humano +todo, Elfo +DEX/+MANA, Enano +HP/+DEF,
+     * Orco +STR/+HP, Mediano +DEX/+DEF). Sigue la misma filosofía que el
+     * RACE_GROWTH del backend pero con magnitudes algo mayores porque solo
+     * se aplica una vez (al crear).
+     */
+    private void applyRaceBase(int[] stats, String race) {
+        int[] mod;
+        switch (race) {
+            case "Humano":  mod = new int[]{ 5, 1, 1, 1, 1}; break;
+            case "Elfo":    mod = new int[]{ 0, 0, 3, 0, 3}; break;
+            case "Enano":   mod = new int[]{ 8, 1, 0, 3, 0}; break;
+            case "Orco":    mod = new int[]{ 6, 3, 0, 1, 0}; break;
+            case "Mediano": mod = new int[]{ 2, 0, 3, 2, 0}; break;
+            default:        return;
+        }
+        for (int i = 0; i < stats.length && i < mod.length; i++) {
+            stats[i] = Math.max(0, stats[i] + mod[i]);
         }
     }
 }

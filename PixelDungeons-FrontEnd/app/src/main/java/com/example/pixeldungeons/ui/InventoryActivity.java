@@ -135,14 +135,17 @@ public class InventoryActivity extends AppCompatActivity {
     }
 
     private void equiparItem(Item item, int position) {
+        boolean nuevoEstado = !item.isEquipped();
         Map<String, Object> body = new HashMap<>();
-        body.put("equipped", !item.isEquipped());
+        body.put("equipped", nuevoEstado);
         ApiClient.getService().equiparItem(heroId, item.getId(), body).enqueue(new Callback<Map<String, Object>>() {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (response.isSuccessful()) {
                     cargarInventario();
-                    String msg = item.isEquipped() ? "Equipado: " : "Desequipado: ";
+                    // El toast debe describir la acción real (estado nuevo), no el
+                    // estado viejo del item antes del toggle.
+                    String msg = nuevoEstado ? "Equipado: " : "Desequipado: ";
                     Toast.makeText(InventoryActivity.this, msg + item.getName(), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -159,10 +162,7 @@ public class InventoryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (!response.isSuccessful() || response.body() == null) return;
-                int currentHp = ((Number)response.body().get("hp")).intValue();
-                int maxHp     = ((Number)response.body().get("max_hp")).intValue();
-
-                aplicarEfectoYConsumir(item, currentHp, maxHp);
+                aplicarEfectoYConsumir(item, response.body());
             }
 
             @Override
@@ -172,13 +172,43 @@ public class InventoryActivity extends AppCompatActivity {
         });
     }
 
-    private void aplicarEfectoYConsumir(Item item, int currentHp, int maxHp) {
+    private void aplicarEfectoYConsumir(Item item, Map<String, Object> hero) {
         String stat = item.getBonusStat();
         int bonus   = item.getBonusValue();
 
+        // Construimos el body con el stat correspondiente al bonus del item.
+        // Soporta hp, str, dex, def y mana. Si bonus es 0 o stat es "none",
+        // no hay efecto y solo se consume.
         Map<String, Object> statBody = new HashMap<>();
-        if ("hp".equals(stat) && bonus > 0) {
-            statBody.put("hp", Math.min(currentHp + bonus, maxHp));
+        if (bonus != 0 && stat != null) {
+            switch (stat) {
+                case "hp": {
+                    int hp    = ((Number) hero.get("hp")).intValue();
+                    int maxHp = ((Number) hero.get("max_hp")).intValue();
+                    statBody.put("hp", Math.max(0, Math.min(hp + bonus, maxHp)));
+                    break;
+                }
+                case "str": {
+                    int s = ((Number) hero.get("strength")).intValue();
+                    statBody.put("strength", Math.max(0, s + bonus));
+                    break;
+                }
+                case "dex": {
+                    int d = ((Number) hero.get("dex")).intValue();
+                    statBody.put("dex", Math.max(0, d + bonus));
+                    break;
+                }
+                case "def": {
+                    int d = ((Number) hero.get("defence")).intValue();
+                    statBody.put("defence", Math.max(0, d + bonus));
+                    break;
+                }
+                case "mana": {
+                    int m = ((Number) hero.get("mana")).intValue();
+                    statBody.put("mana", Math.max(0, m + bonus));
+                    break;
+                }
+            }
         }
 
         Runnable consumir = () -> {

@@ -1,173 +1,244 @@
 # 🐉 PixelDungeons — Companion App para Rol de Mesa
 
-PixelDungeons es una aplicación móvil desarrollada como Proyecto Intermodular para el ciclo de Desarrollo de Aplicaciones Multiplataforma (DAM). Funciona como asistente virtual (*companion*) para partidas de rol de mesa, digitalizando la gestión de personajes, inventarios y mapas para agilizar el ritmo de juego.
+PixelDungeons es una aplicación Android para acompañar partidas de rol de mesa. Digitaliza la gestión de personajes, inventarios y mapas para que ni el GM ni los jugadores tengan que parar la partida con trámites de papel.
+
+El proyecto se compone de un **Backend API REST** desarrollado con Django (sin DRF, usando `JsonResponse` nativo) y una **aplicación móvil nativa** para Android escrita en Java.
 
 ---
 
-## 📱 Tecnologías
+## 📐 Arquitectura General del Sistema
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | Android Nativo (Java), XML (ConstraintLayout, RecyclerView) |
-| Tema visual | Material Design 3 (paleta D&D personalizada) |
-| Backend *(planificado)* | Django REST Framework |
-| Comunicación *(planificada)* | HTTP/JSON (GET, POST, PUT, DELETE) |
+El sistema implementa una arquitectura desacoplada cliente-servidor:
 
----
+**Servidor (Backend):** Expone endpoints REST que devuelven y reciben JSON. Gestiona toda la lógica de negocio: creación de salas con código único, control de personajes (stats, nivel, XP), sistema de inventario con ítems equipables y consumibles, y mapas que el GM activa o desactiva en tiempo real. Corre en producción sobre Gunicorn en un VPS público.
 
-## 🏗️ Arquitectura
-
-La aplicación organiza el código en tres capas:
-
-```
-ui/          → Activities y Adapters (presentación)
-data/        → Repositorios (fuente de datos, actualmente en memoria)
-model/       → Entidades del dominio (Hero, Item, GameMap)
-```
-
-Los repositorios actúan como capa de abstracción entre la UI y los datos, de forma que cuando se integre el backend bastará con sustituir la implementación interna sin tocar las Activities.
-
-> **Nota:** En la fase actual (prototipo sin backend) los datos se almacenan en listas estáticas en memoria y no persisten entre sesiones. La integración con la API REST de Django está prevista para la siguiente fase.
+**Cliente (Frontend):** Aplicación móvil nativa con Material Design 3. Se conecta a la API mediante Retrofit 2 + OkHttp, gestiona la sesión activa con un `SessionManager` singleton y ofrece dos vistas diferenciadas según el rol del usuario: Jugador o Game Master.
 
 ---
 
-## 🗂️ Estructura del proyecto
+## ✨ Características Principales
 
-### Modelos (`model/`)
+### 🖥️ Backend API (Django nativo)
 
-| Clase | Descripción |
-|---|---|
-| `Hero` | Personaje jugador: nombre, raza, clase, HP, STR, DEX, DEF, MANA |
-| `Item` | Objeto del juego: nombre, tipo, cantidad, consumible, descripción, bonus de stat y valor del bonus, estado equipado |
-| `GameMap` | Mapa de partida: nombre y visibilidad para los jugadores |
+- **Autenticación propia:** Registro e inicio de sesión sin librerías externas. Las credenciales se verifican con `make_password` / `check_password` de Django.
+- **Sistema de Salas:** El GM crea una sala con nombre y código único; los jugadores buscan por código y se unen.
+- **Gestión de Héroes:** Creación con 6 clases (Guerrero, Arquero, Mago, Berserker, Pícaro, Clérigo) y 5 razas (Humano, Elfo, Enano, Orco, Mediano), cada combinación con su propia tabla de crecimiento de stats por nivel.
+- **Sistema de Niveles y XP:** Curva de progresión `50·n·(n+1)`. El GM puede subir o bajar el nivel manualmente; el servidor recalcula stats y escala la XP automáticamente.
+- **Inventario relacional (N:N):** Un mismo ítem del catálogo puede pertenecer a varios héroes con cantidades y estados de equipamiento independientes. Equipar o desequipar aplica o retira el bonus del ítem en los stats del héroe de forma simétrica.
+- **Mapas por sala:** El GM sube imágenes de mapas (base64) y controla cuál está visible para los jugadores en cada momento.
+- **VPS en producción:** API accesible en `http://161.97.73.46:8000/` sin configuración adicional.
 
-### Repositorios (`data/`)
+### 📱 Aplicación Móvil (Android Java)
 
-| Clase | Descripción |
-|---|---|
-| `HeroRepository` | Lista de personajes creados en la sesión |
-| `ItemRepository` | Catálogo global de objetos disponibles (definidos por el GM) |
-| `PlayerInventoryRepository` | Inventario real del jugador (separado del catálogo, empieza vacío) |
-| `GameMapRepository` | Lista de mapas con control de visibilidad |
+- **13 actividades** organizadas según el flujo de cada rol.
+- **Flujo del Jugador:** Login → Lobby → SearchRoom → CharacterList → CharacterDetail / Inventory / Map.
+- **Flujo del Game Master:** Login → Lobby → CreateRoom → MasterDashboard → (gestión de héroes, ítems y mapas).
+- **Ficha de personaje (CharacterDetailActivity):** Visualización de HP, Fuerza, Destreza, Defensa, Maná, Nivel y barra de XP. El GM puede editar stats y nivel directamente desde esta pantalla.
+- **Inventario interactivo (InventoryActivity):** Los jugadores usan consumibles (descuenta cantidad o borra el ítem) y equipan/desequipan objetos. El GM da ítems desde el catálogo de la sala o los retira.
+- **Mapas compartidos (MapActivity):** El jugador ve el mapa que el GM ha marcado como visible. El GM gestiona la galería de mapas desde MapManagerActivity.
+- **Tema oscuro/claro:** Selector de tema persistente disponible en todas las pantallas con barra de navegación inferior.
+- **Reintentos automáticos de red:** OkHttp configurado con `Connection: close` y hasta 3 reintentos ante fallos de conexión con Gunicorn.
 
-### Pantallas (`ui/`)
+---
 
-| Activity | Rol | Descripción |
+## 🛠️ Tecnologías y Dependencias
+
+### Backend
+
+| Tecnología | Versión | Uso |
 |---|---|---|
-| `LoginActivity` | Ambos | Inicio de sesión con email y contraseña |
-| `RegisterActivity` | Ambos | Registro de nuevos usuarios |
-| `LobbyActivity` | Ambos | Punto de entrada: buscar sala o crear sala |
-| `SearchRoomActivity` | Jugador | Búsqueda de sala por código o nombre |
-| `CreateRoomActivity` | GM | Creación y configuración de una nueva sala |
-| `CharacterListActivity` | Jugador | Lista de personajes del jugador; vacía hasta que se crea uno |
-| `CharacterCreateActivity` | Jugador | Formulario de creación: nombre, raza, clase; stats generados automáticamente por clase |
-| `CharacterDetailActivity` | Ambos | Hoja de personaje con stats; el GM puede editarlos en campo libre; el jugador ve stats base + bonuses de objetos equipados |
-| `MapActivity` | Ambos | Muestra el mapa actualmente visible; mensaje de espera si el GM no ha compartido ninguno |
-| `InventoryActivity` | Ambos | Mochila del jugador: usar consumibles, equipar objetos; el GM puede dar objetos del catálogo o retirarlos |
-| `MasterDashboardActivity` | GM | Panel de control: lista de jugadores, acceso a gestor de objetos y gestor de mapas |
-| `MapManagerActivity` | GM | Crear mapas y activar cuál es visible para los jugadores |
-| `ItemManagerActivity` | GM | Catálogo de objetos disponibles; crear nuevos objetos con tipo, descripción, stat que mejora y valor del bonus |
+| Python | 3.10+ | Lenguaje del servidor |
+| Django | 6.0.5 | Framework web |
+| Gunicorn | 23.0.0 | Servidor WSGI en producción |
+| SQLite3 | — | Base de datos relacional |
 
-### Recursos XML (`res/`)
+> ⚠️ El backend usa **Django nativo sin DRF**. Todas las respuestas se construyen con `JsonResponse` y la lógica reside en funciones de vista decoradas con `@csrf_exempt`.
 
-Toda la interfaz se construye declarativamente en XML usando `ConstraintLayout` como contenedor principal y `RecyclerView` para las listas dinámicas. Los layouts se dividen en dos grupos: **layouts de Activity** (una pantalla completa) y **layouts de item** (la vista de cada elemento dentro de un `RecyclerView`).
+### Frontend (Android)
 
-**Layouts de Activity (`res/layout/activity_*.xml`):**
-
-| Layout | Activity asociada |
-|---|---|
-| `activity_login.xml` | Formulario de inicio de sesión (email + contraseña + botones) |
-| `activity_register.xml` | Formulario de registro |
-| `activity_lobby.xml` | Pantalla con dos botones: buscar sala / crear sala |
-| `activity_search_room.xml` | Buscador de salas con campo de código |
-| `activity_create_room.xml` | Formulario de creación de sala |
-| `activity_character_list.xml` | Título + RecyclerView de personajes + FAB de crear, con empty state |
-| `activity_character_create.xml` | Formulario con nombre, Spinner de raza, Spinner de clase |
-| `activity_character_detail.xml` | Hoja de personaje con bloque de stats en `ScrollView` y botones de navegación a Mapa e Inventario |
-| `activity_map.xml` | Vista del mapa activo (etiqueta + nombre del mapa) con empty state cuando no hay mapa visible |
-| `activity_inventory.xml` | Mochila: RecyclerView de objetos, FAB de añadir (solo GM) y empty state |
-| `activity_master_dashboard.xml` | Título de sala, lista de jugadores y tres botones de gestión |
-| `activity_map_manager.xml` | Lista de mapas + FAB para crear |
-| `activity_item_manager.xml` | Lista del catálogo de objetos + FAB para crear |
-
-**Layouts de item (`res/layout/item_*.xml`):**
-
-| Layout | Usado en |
-|---|---|
-| `item_player.xml` | Tarjeta de personaje (lista de la dashboard del GM y de la lista del jugador) |
-| `item_map.xml` | Tarjeta de mapa con su nombre y un indicador de visibilidad (gestor de mapas) |
-| `item_inventory.xml` | Tarjeta de objeto: icono, nombre, tipo · descripción · bonus, cantidad y botón de acción contextual |
-
-**Recursos compartidos (`res/values/` y `res/values-night/`):**
-
-| Fichero | Descripción |
-|---|---|
-| `themes.xml` | Tema `Theme.PixelDungeons` heredando de `Theme.Material3.DayNight.NoActionBar`. Define la paleta principal sobre los atributos `colorPrimary`, `colorOnPrimary`, `colorSurface`, `colorBackground`, etc. |
-| `colors.xml` | Paleta completa Material 3 con tono D&D (oro/ámbar `#735C0C` como primario, fondo crema `#FFF8F1`). Incluye variantes de contraste medio y alto, además de los colores de compatibilidad heredados (`black`, `white`, `purple_*`, `teal_*`). |
-| `theme_overlays.xml` | Overlays de Material 3 (`ThemeOverlay`) para los modos *medium contrast* y *high contrast*. |
-| `strings.xml` | Cadenas globales (nombre de la app y literales reutilizables). |
-| `values-night/` | Variantes oscuras de los tres ficheros anteriores; el sistema cambia automáticamente entre claro y oscuro según los ajustes del dispositivo. |
-
-**Manifest (`AndroidManifest.xml`):**
-
-Declara las 13 Activities y aplica `Theme.PixelDungeons` a toda la app. `LoginActivity` es la actividad lanzadora (`MAIN` + `LAUNCHER`).
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Java | 8 (JDK 17) | Lenguaje de la app |
+| Android Gradle Plugin | 8.x | Build system |
+| Retrofit 2 + OkHttp | 2.x | Peticiones HTTP y deserialización JSON |
+| Gson | — | Conversión JSON ↔ objetos Java |
+| Material Design 3 | — | Componentes de interfaz |
 
 ---
 
-## 🗺️ Flujo de navegación
+## 📂 Estructura del Proyecto
 
 ```
-LoginActivity
-    └── LobbyActivity
-            ├── [Jugador] SearchRoomActivity
-            │       └── CharacterListActivity
-            │               ├── CharacterCreateActivity
-            │               └── CharacterDetailActivity ──┐
-            │                       └── MapActivity       ├── triángulo de navegación
-            │                       └── InventoryActivity ┘
-            │
-            └── [GM] CreateRoomActivity
-                    └── MasterDashboardActivity
-                            ├── ItemManagerActivity
-                            ├── MapManagerActivity
-                            └── CharacterDetailActivity (vista GM)
-                                    └── InventoryActivity (vista GM)
+PixelDungeons/
+├── PixelDungeons-BackEnd/
+│   ├── api/
+│   │   ├── migrations/          # 4 migraciones (0001–0004)
+│   │   ├── models.py            # Usuario, Sala, Hero, Item, InventoryEntry, GameMap
+│   │   ├── views.py             # 22 endpoints — lógica completa de la API
+│   │   └── urls.py              # Enrutamiento de la aplicación
+│   ├── pixeldungeons_backend/
+│   │   ├── settings.py
+│   │   └── urls.py
+│   ├── requirements.txt
+│   └── manage.py
+│
+├── PixelDungeons-FrontEnd/
+│   └── app/src/main/java/com/example/pixeldungeons/
+│       ├── PixelDungeonsApp.java    # Application class (inicialización global)
+│       ├── network/
+│       │   ├── ApiClient.java       # Singleton Retrofit + OkHttp
+│       │   └── ApiService.java      # Declaración de todos los endpoints
+│       ├── model/                   # Modelos de datos (Hero, Item, GameMap, StatItem)
+│       ├── data/                    # Capa de repositorio
+│       │   ├── HeroRepository.java
+│       │   ├── ItemRepository.java
+│       │   ├── PlayerInventoryRepository.java
+│       │   └── GameMapRepository.java
+│       └── ui/
+│           ├── adapter/             # Adaptadores RecyclerView
+│           │   ├── ItemAdapter.java
+│           │   ├── HeroAdapter.java
+│           │   ├── PlayerAdapter.java
+│           │   ├── SalaAdapter.java
+│           │   ├── MapAdapter.java
+│           │   └── StatAdapter.java
+│           ├── SessionManager.java      # Singleton de sesión activa
+│           ├── ThemeHelper.java         # Gestión del tema oscuro/claro
+│           ├── LoginActivity.java
+│           ├── RegisterActivity.java
+│           ├── LobbyActivity.java
+│           ├── CreateRoomActivity.java
+│           ├── SearchRoomActivity.java
+│           ├── MasterDashboardActivity.java
+│           ├── CharacterListActivity.java
+│           ├── CharacterCreateActivity.java
+│           ├── CharacterDetailActivity.java
+│           ├── InventoryActivity.java
+│           ├── MapActivity.java
+│           ├── MapManagerActivity.java
+│           └── ItemManagerActivity.java
+│
+├── docs/
+│   ├── MEMORIA VERSION FINAL.md
+│   ├── MEMORIA VERSION FINAL.pdf
+│   └── Diagramas/                   # Imágenes de los 6 diagramas técnicos
+└── README.md
 ```
 
 ---
 
-## ⚔️ Funcionalidades implementadas
+## 📋 Documentación de la API (Endpoints)
 
-### Rol Jugador
-- Crear personajes con nombre, raza y clase (stats generados automáticamente según clase)
-- Ver hoja de personaje con stats en tiempo real
-- Navegación fluida entre Stats, Mapa e Inventario
-- Mochila: usar objetos consumibles (reduce cantidad), equipar objetos defensivos/ofensivos
-- Al equipar un objeto se aplica su bonus a la stat correspondiente (STR, DEX, DEF, MANA o HP)
-- Solo se puede tener un arma y una armadura equipadas a la vez; equipar una nueva desequipa la anterior automáticamente
-- Visualización del mapa activo compartido por el GM
+Todas las respuestas son JSON. La base es `http://161.97.73.46:8000/` en producción.
 
-### Rol Game Master
-- Crear sala y gestionar jugadores
-- Ver y editar los stats de cualquier personaje
-- Crear objetos en el catálogo: nombre, tipo, descripción, stat que mejora y valor del bonus
-- Entrar al inventario de un jugador y darle objetos del catálogo o retirarlos
-- Crear mapas y controlar cuál es visible para los jugadores en cada momento
+| Recurso | Método | Endpoint | Descripción |
+|---|---|---|---|
+| Autenticación | POST | `/api/registro/` | Registra un nuevo usuario |
+| Autenticación | POST | `/api/login/` | Inicia sesión, devuelve id y username |
+| Salas | GET | `/api/salas/` | Lista todas las salas o busca por `?codigo=` |
+| Salas | POST | `/api/salas/` | Crea una nueva sala (GM) |
+| Salas | DELETE | `/api/salas/{sala_id}/` | Elimina una sala (GM) |
+| Héroes | GET | `/api/salas/{sala_id}/heroes/` | Lista los héroes de una sala |
+| Héroes | POST | `/api/heroes/` | Crea un héroe nuevo |
+| Héroes | GET | `/api/heroes/{hero_id}/` | Detalle de un héroe (stats, nivel, XP) |
+| Héroes | PUT | `/api/heroes/{hero_id}/` | Actualiza stats, nivel o XP de un héroe |
+| Héroes | DELETE | `/api/heroes/{hero_id}/` | Elimina un héroe |
+| Inventario | GET | `/api/heroes/{hero_id}/inventario/` | Inventario completo del héroe |
+| Inventario | POST | `/api/heroes/{hero_id}/inventario/` | Da un ítem al héroe |
+| Inventario | PUT | `/api/heroes/{hero_id}/inventario/{item_id}/` | Equipa/desequipa o actualiza cantidad |
+| Inventario | DELETE | `/api/heroes/{hero_id}/inventario/{item_id}/` | Quita un ítem del inventario |
+| Ítems | GET | `/api/items/` | Catálogo de ítems (filtrable por `?sala_id=`) |
+| Ítems | POST | `/api/items/` | Crea un ítem en el catálogo de la sala |
+| Ítems | DELETE | `/api/items/{item_id}/` | Elimina un ítem del catálogo |
+| Mapas | GET | `/api/salas/{sala_id}/mapas/` | Lista los mapas de una sala |
+| Mapas | POST | `/api/salas/{sala_id}/mapas/` | Sube un nuevo mapa (imagen en base64) |
+| Mapas | GET | `/api/mapas/{mapa_id}/` | Detalle de un mapa |
+| Mapas | PUT | `/api/mapas/{mapa_id}/` | Edita nombre, imagen o visibilidad |
+| Mapas | DELETE | `/api/mapas/{mapa_id}/` | Elimina un mapa |
 
 ---
 
-## 🚀 Estado del proyecto
+## 🚀 Guía de Instalación y Ejecución
 
-**Fase actual:** Prototipo de interfaz funcional sin backend.
+### Opción A — Servidor activo (lo normal)
 
-| Módulo | Estado |
-|---|---|
-| Navegación y flujo completo | ✅ Completado |
-| Gestión de personajes | ✅ Completado |
-| Sistema de inventario y equipamiento | ✅ Completado |
-| Catálogo de objetos (GM) | ✅ Completado |
-| Gestión de mapas y visibilidad | ✅ Completado |
-| Tema Material Design 3 | ✅ Completado |
-| Integración con API REST (Django) | 🔲 Pendiente |
-| Persistencia real (base de datos) | 🔲 Pendiente |
-| Autenticación real | 🔲 Pendiente |
+El backend está desplegado en un VPS público. Solo hace falta:
+
+1. Compilar e instalar el APK en un dispositivo Android (API 24 o superior).
+2. Abrir la app y registrarse o iniciar sesión.
+
+El cliente ya apunta a `http://161.97.73.46:8000/` por defecto; no hay que configurar nada más.
+
+---
+
+### Opción B — Servidor caído o entorno local
+
+Si el VPS deja de responder, puedes levantar el backend en local:
+
+**1. Preparar el entorno Python:**
+
+```bash
+cd PixelDungeons-BackEnd
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+# Linux / macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+**2. Inicializar la base de datos:**
+
+```bash
+python manage.py migrate
+```
+
+**3. Arrancar el servidor:**
+
+```bash
+# Desarrollo (más sencillo):
+python manage.py runserver 0.0.0.0:8000
+
+# Producción (equivalente al VPS):
+gunicorn pixeldungeons_backend.wsgi:application --bind 0.0.0.0:8000
+```
+
+---
+
+## 📱 Inicialización del Frontend (Android)
+
+1. Abre Android Studio y selecciona **Open An Existing Project**.
+2. Dirígete a la carpeta `PixelDungeons-FrontEnd` y ábrela. Deja que Gradle descargue las dependencias y sincronice el proyecto.
+3. **Configuración de la URL base** (solo necesario si usas servidor local):
+
+   Edita la constante `BASE_URL` en:
+   ```
+   app/src/main/java/com/example/pixeldungeons/network/ApiClient.java
+   ```
+
+   ```java
+   // Emulador de Android Studio:
+   private static final String BASE_URL = "http://10.0.2.2:8000/";
+
+   // Dispositivo físico en la misma red Wi-Fi:
+   private static final String BASE_URL = "http://192.168.1.XX:8000/";
+   ```
+
+4. Haz clic en **Run 'app'** (`Shift + F10`) para compilar y desplegar la app en el emulador o dispositivo.
+
+---
+
+## 🛠️ Requisitos
+
+### Frontend (Android)
+
+- Android Studio Narwhal o superior
+- JDK 17 o superior (AGP 8.x lo requiere aunque el código compile en Java 11)
+- Android SDK: `minSdk = 24`, `targetSdk = 36`
+
+### Backend (Python)
+
+- Python 3.10 o superior
+- Dependencias en `PixelDungeons-BackEnd/requirements.txt`

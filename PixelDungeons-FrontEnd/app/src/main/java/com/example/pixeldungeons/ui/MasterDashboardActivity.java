@@ -111,11 +111,16 @@ public class MasterDashboardActivity extends AppCompatActivity {
     }
 
     private void volverAlLobby(String username) {
+        // Al cerrar la sala, la sala deja de existir en el backend. Si volvemos
+        // con CLEAR_TOP a secas, el botón "Atrás" puede regresar al dashboard
+        // de una sala fantasma y todas las peticiones revientan con 404.
+        // CLEAR_TASK + NEW_TASK + finish() vacían el back stack por completo.
         Intent intent = new Intent(this, LobbyActivity.class);
         intent.putExtra("userId", userId);
         intent.putExtra("username", username);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+        finish();
     }
 
     private void cargarHeroes() {

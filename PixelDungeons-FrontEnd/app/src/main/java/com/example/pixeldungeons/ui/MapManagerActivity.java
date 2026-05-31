@@ -229,8 +229,21 @@ public class MapManagerActivity extends AppCompatActivity {
             if (is == null) return "";
             Bitmap bitmap = BitmapFactory.decodeStream(is);
             if (bitmap == null) return "";
-            // Máximo 400x400 al 50% de calidad → ~10KB base64 por mapa
-            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, 400, 400, true);
+            // Reescalamos manteniendo la proporción: el lado más largo cae a
+            // MAX_SIDE, el otro se calcula a partir del aspect ratio original.
+            // Antes forzábamos 400x400 a saco y aplastaba imágenes rectangulares.
+            final int MAX_SIDE = 400;
+            int origW = bitmap.getWidth();
+            int origH = bitmap.getHeight();
+            int newW, newH;
+            if (origW >= origH) {
+                newW = Math.min(origW, MAX_SIDE);
+                newH = Math.max(1, Math.round(origH * (newW / (float) origW)));
+            } else {
+                newH = Math.min(origH, MAX_SIDE);
+                newW = Math.max(1, Math.round(origW * (newH / (float) origH)));
+            }
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, newW, newH, true);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             scaled.compress(Bitmap.CompressFormat.JPEG, 50, baos);
             return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);

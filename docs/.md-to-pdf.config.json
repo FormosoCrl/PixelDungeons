@@ -1,0 +1,18 @@
+{
+  "pdf_options": {
+    "format": "A4",
+    "margin": {
+      "top": "20mm",
+      "bottom": "20mm",
+      "left": "18mm",
+      "right": "18mm"
+    },
+    "printBackground": true,
+    "displayHeaderFooter": true,
+    "headerTemplate": "<span></span>",
+    "footerTemplate": "<div style=\"font-size:8pt;text-align:center;width:100%;color:#888;\">Página <span class=\"pageNumber\"></span> de <span class=\"totalPages\"></span></div>"
+  },
+  "launch_options": {
+    "args": ["--no-sandbox"]
+  }
+}

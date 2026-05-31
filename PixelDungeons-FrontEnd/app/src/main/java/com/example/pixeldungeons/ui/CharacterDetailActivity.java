@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.TypedValue;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
@@ -34,6 +35,7 @@ public class CharacterDetailActivity extends AppCompatActivity {
     private TextView hpText;
     private int maxHp;
     private StatAdapter statAdapter;
+    private List<StatItem> statList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +75,7 @@ public class CharacterDetailActivity extends AppCompatActivity {
         xpBar.setMax(xpNeeded);
         xpBar.setProgress(Math.min(xp, xpNeeded));
 
-        List<StatItem> statList = new ArrayList<>();
+        statList = new ArrayList<>();
         statList.add(new StatItem("Fuerza (STR)", str));
         statList.add(new StatItem("Destreza (DEX)", dex));
         statList.add(new StatItem("Defensa (DEF)", defence));
@@ -107,6 +109,60 @@ public class CharacterDetailActivity extends AppCompatActivity {
             hpText.setText(hp + " / " + maxHp);
             xpText.setText(xp + " / " + xpNeeded);
         }
+
+        // Los extras del Intent son del momento en que se abrió la pantalla
+        // anterior; si el jugador acaba de equipar/desequipar/usar un item, el
+        // backend ya tiene los stats nuevos. Pedimos el héroe al servidor y
+        // repintamos para que los bonus se vean.
+        refrescarDesdeServidor(heroId, isMaster);
+    }
+
+    private void refrescarDesdeServidor(int heroId, boolean isMaster) {
+        ApiClient.getService().getHero(heroId).enqueue(new Callback<Map<String, Object>>() {
+            @Override
+            public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                if (!response.isSuccessful() || response.body() == null) return;
+                Map<String, Object> h = response.body();
+                int newHp    = ((Number) h.get("hp")).intValue();
+                int newMaxHp = ((Number) h.get("max_hp")).intValue();
+                int newStr   = ((Number) h.get("strength")).intValue();
+                int newDex   = ((Number) h.get("dex")).intValue();
+                int newDef   = ((Number) h.get("defence")).intValue();
+                int newMana  = ((Number) h.get("mana")).intValue();
+                int newLevel = ((Number) h.get("level")).intValue();
+                int newXp    = ((Number) h.get("xp")).intValue();
+                int xpNeeded = xpToNext(newLevel);
+
+                maxHp = newMaxHp;
+
+                statList.set(0, new StatItem("Fuerza (STR)", newStr));
+                statList.set(1, new StatItem("Destreza (DEX)", newDex));
+                statList.set(2, new StatItem("Defensa (DEF)", newDef));
+                statList.set(3, new StatItem("Mana", newMana));
+                statAdapter.notifyDataSetChanged();
+
+                View hpView    = findViewById(R.id.hp_value);
+                View xpView    = findViewById(R.id.xp_text);
+                View levelView = findViewById(R.id.level_label);
+                ProgressBar bar = findViewById(R.id.xp_bar);
+                bar.setMax(xpNeeded);
+                bar.setProgress(Math.min(newXp, xpNeeded));
+
+                if (isMaster) {
+                    ((EditText) hpView).setText(String.valueOf(newHp));
+                    ((EditText) xpView).setText(String.valueOf(newXp));
+                    ((EditText) levelView).setText(String.valueOf(newLevel));
+                } else {
+                    ((TextView) hpView).setText(newHp + " / " + newMaxHp);
+                    ((TextView) xpView).setText(newXp + " / " + xpNeeded);
+                    ((TextView) levelView).setText("Lv." + newLevel);
+                }
+            }
+            @Override
+            public void onFailure(Call<Map<String, Object>> call, Throwable t) {
+                // Silencioso: ya pintamos los valores del Intent como fallback.
+            }
+        });
     }
 
     /** XP necesaria para pasar de 'level' al siguiente. Misma curva que el backend. */

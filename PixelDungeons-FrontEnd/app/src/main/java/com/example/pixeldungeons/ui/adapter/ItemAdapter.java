@@ -44,9 +44,19 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Item item = items.get(position);
         holder.nameText.setText(item.getName());
-        String bonusInfo = (!item.getBonusStat().equals("none") && item.getBonusValue() > 0)
-                ? " · +" + item.getBonusValue() + " " + item.getBonusStat().toUpperCase()
-                : "";
+        // Mostramos el bonus del item en la tarjeta. Soportamos negativos
+        // (pociones de veneno, debuffs…) además de positivos: el backend y el
+        // motor de consumir ya los aplican, así que la UI debe verlos para
+        // que el jugador sepa qué va a pasar antes de tocar el botón.
+        // Usamos "none".equals(stat) en vez de stat.equals("none") para no
+        // reventar con NPE si el JSON viene sin la key bonus_stat.
+        int bonusValue = item.getBonusValue();
+        String bonusStat = item.getBonusStat();
+        String bonusInfo = "";
+        if (!"none".equals(bonusStat) && bonusStat != null && bonusValue != 0) {
+            String signo = bonusValue > 0 ? "+" : ""; // los negativos ya traen el "-"
+            bonusInfo = " · " + signo + bonusValue + " " + bonusStat.toUpperCase();
+        }
         holder.typeText.setText(item.getType() + " · " + item.getDescription() + bonusInfo);
         holder.quantityText.setText("x" + item.getQuantity());
 

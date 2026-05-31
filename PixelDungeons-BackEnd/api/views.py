@@ -48,6 +48,48 @@ def apply_level_up(h):
     h.mana += cls.get('mana', 0) + rac.get('mana', 0)
 
 
+def _stat_field(stat_key):
+    """Mapea la clave del bonus_stat al nombre real del campo en Hero."""
+    return {
+        'str': 'strength',
+        'dex': 'dex',
+        'def': 'defence',
+        'mana': 'mana',
+        'hp': 'max_hp',
+    }.get(stat_key)
+
+
+def _apply_item_bonus(hero, item, sign=1):
+    """Aplica (sign=+1) o quita (sign=-1) el bonus de un item al héroe.
+    Es simétrico: equipar y desequipar se cancelan exactamente.
+    Para HP: ajusta max_hp y hp en la misma cantidad, con clamps."""
+    field = _stat_field(item.bonus_stat)
+    if field is None or item.bonus_value == 0:
+        return
+    delta = sign * item.bonus_value
+    if field == 'max_hp':
+        hero.max_hp = max(1, hero.max_hp + delta)
+        hero.hp = max(0, min(hero.hp + delta, hero.max_hp))
+    else:
+        new_val = max(0, getattr(hero, field) + delta)
+        setattr(hero, field, new_val)
+
+
+def apply_level_down(h):
+    """Inverso de apply_level_up: resta el crecimiento de UN nivel.
+    Stats con clamp a 0, max_hp con clamp a 1, y hp recortado al nuevo max."""
+    cls = CLASS_GROWTH.get(h.hero_class, {})
+    rac = RACE_GROWTH.get(h.race, {})
+    hp_loss = cls.get('max_hp', 0) + rac.get('max_hp', 0)
+    h.max_hp = max(1, h.max_hp - hp_loss)
+    h.hp = max(0, h.hp - hp_loss)
+    h.hp = min(h.hp, h.max_hp)
+    h.strength = max(0, h.strength - cls.get('strength', 0) - rac.get('strength', 0))
+    h.dex = max(0, h.dex - cls.get('dex', 0) - rac.get('dex', 0))
+    h.defence = max(0, h.defence - cls.get('defence', 0) - rac.get('defence', 0))
+    h.mana = max(0, h.mana - cls.get('mana', 0) - rac.get('mana', 0))
+
+
 @csrf_exempt
 def registro(request):
     if request.method != 'POST':
@@ -173,11 +215,10 @@ def hero_detalle(request, hero_id):
         if 'level' in data and int(data['level']) != old_level:
             # Cambio manual de nivel por el máster:
             #  - Si SUBE de nivel, se aplica el crecimiento de stats
-            #    (clase + raza) por cada nivel ganado, igual que la subida
-            #    por XP. Así un nivel 19 puesto a mano tiene los stats de
-            #    un nivel 19 real.
-            #  - Si BAJA de nivel, los stats acumulados se mantienen
-            #    (no se puede revertir el crecimiento de forma fiable).
+            #    (clase + raza) por cada nivel ganado.
+            #  - Si BAJA de nivel, se resta ese mismo crecimiento por cada
+            #    nivel perdido (con clamps: stats >= 0, max_hp >= 1).
+            #  - El nivel nunca puede ser menor a 1.
             #  - La XP se reescala al mismo % de progreso del nuevo nivel.
             new_level = max(1, int(data['level']))
             if new_level > old_level:
@@ -186,7 +227,10 @@ def hero_detalle(request, hero_id):
                     h.level += 1
                     apply_level_up(h)
             else:
-                h.level = new_level
+                h.level = old_level
+                for _ in range(old_level - new_level):
+                    apply_level_down(h)
+                    h.level -= 1
             old_needed = xp_to_next(old_level)
             pct = (h.xp / old_needed) if old_needed > 0 else 0
             new_needed = xp_to_next(h.level)
@@ -291,12 +335,24 @@ def inventario_item(request, hero_id, item_id):
     if request.method == 'PUT':
         data = _body(request)
         if 'equipped' in data:
-            entry.equipped = data['equipped']
+            new_equipped = bool(data['equipped'])
+            # Si el flag cambia, aplicamos o quitamos el bonus del item en
+            # los stats del héroe. Simétrico, así equipar+desequipar se
+            # cancela exacto.
+            if new_equipped != entry.equipped:
+                _apply_item_bonus(entry.hero, entry.item, sign=(1 if new_equipped else -1))
+                entry.hero.save()
+            entry.equipped = new_equipped
         if 'quantity' in data:
             entry.quantity = data['quantity']
         entry.save()
         return JsonResponse({'item_id': item_id, 'equipped': entry.equipped, 'quantity': entry.quantity})
     if request.method == 'DELETE':
+        # Si se borra un item equipado, primero quitamos su bonus para que
+        # no quede un efecto fantasma en el héroe.
+        if entry.equipped:
+            _apply_item_bonus(entry.hero, entry.item, sign=-1)
+            entry.hero.save()
         entry.delete()
         return JsonResponse({'ok': True})
     return JsonResponse({'error': 'Método no permitido'}, status=405)
